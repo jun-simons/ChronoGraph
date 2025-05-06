@@ -51,5 +51,44 @@ ctest --output-on-failure
 ./examples/basic_snapshot
 ```
 
+If everything succeeds, you’ll have:
+
+- libchronograph.a (the core static library)
+- test_Graph (unit tests)
+- examples/basic_snapshot (a minimal demo CLI)
+
+## Usage
+
+You can integrate Chronograph in CMake like:
+```cmake
+find_package(chronograph REQUIRED PATHS /path/to/ChronoGraph/build)
+add_executable(my_app src/main.cpp)
+target_link_libraries(my_app PRIVATE chronograph::chronograph)
+```
+
+Example code:
+```cpp
+#include <chronograph/Graph.h>
+using namespace chronograph;
+
+int main() {
+    Graph g;
+    int64_t ts = 1618033988;
+
+    g.addNode("user42", {{"name","Dave"}}, ts);
+    g.addNode("user73", {{"name","Eve"}}, ts + 1);
+    g.addEdge("edge1", "user42", "user73",
+              {{"since","2025-05-06"}}, ts + 2);
+
+    for (auto& [id, node] : g.getNodes()) {
+        std::cout << "Node " << id
+                  << " has name="
+                  << node.attributes.at("name")
+                  << "\n";
+    }
+}
+```
+
 This project is in early development 
 (www.junsimons.com)
+
