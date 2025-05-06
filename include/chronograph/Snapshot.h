@@ -1,10 +1,10 @@
-// include/versioned_graph/Snapshot.h
+// include/chronograph/Snapshot.h
 #pragma once
 
 #include "Graph.h"
 #include <unordered_map>
 
-namespace versioned_graph {
+namespace chronograph {
 
 class Snapshot {
 public:
@@ -20,4 +20,4 @@ private:
     std::unordered_map<std::string, Edge> edges_;
 };
 
-}  // namespace versioned_graph
+}  // namespace chronograph

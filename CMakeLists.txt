@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(versioned_graph VERSION 0.1.0 LANGUAGES CXX)
+project(chronograph VERSION 0.1.0 LANGUAGES CXX)
 
 # Use C++17
 set(CMAKE_CXX_STANDARD 17)
@@ -10,7 +10,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 # Core library target
-add_library(versioned_graph
+add_library(chronograph
     src/Event.cpp
     src/Node.cpp
     src/Edge.cpp
@@ -19,7 +19,7 @@ add_library(versioned_graph
 )
 
 # Specify include directories for consumers
-target_include_directories(versioned_graph PUBLIC
+target_include_directories(chronograph PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
@@ -33,20 +33,20 @@ target_include_directories(versioned_graph PUBLIC
 
 # Unit test targets
 # add_executable(test_Event tests/test_Event.cpp)
-# target_link_libraries(test_Event PRIVATE versioned_graph GTest::GTest GTest::Main)
+# target_link_libraries(test_Event PRIVATE chronograph GTest::GTest GTest::Main)
 # add_test(NAME test_Event COMMAND test_Event)
 
 # add_executable(test_Graph tests/test_Graph.cpp)
-# target_link_libraries(test_Graph PRIVATE versioned_graph GTest::GTest GTest::Main)
+# target_link_libraries(test_Graph PRIVATE chronograph GTest::GTest GTest::Main)
 # add_test(NAME test_Graph COMMAND test_Graph)
 
 # add_executable(test_Snapshot tests/test_Snapshot.cpp)
-# target_link_libraries(test_Snapshot PRIVATE versioned_graph GTest::GTest GTest::Main)
+# target_link_libraries(test_Snapshot PRIVATE chronograph GTest::GTest GTest::Main)
 # add_test(NAME test_Snapshot COMMAND test_Snapshot)
 
 # Example executable
 # add_executable(basic_snapshot examples/basic_snapshot.cpp)
-# target_link_libraries(basic_snapshot PRIVATE versioned_graph)
+# target_link_libraries(basic_snapshot PRIVATE chronograph)
 
 # Python bindings (for future addition)
 # add_subdirectory(python)

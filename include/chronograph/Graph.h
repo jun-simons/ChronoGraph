@@ -1,4 +1,4 @@
-// include/versioned_graph/Graph.h
+// include/chronograph/Graph.h
 #pragma once
 
 #include "Event.h"
@@ -7,7 +7,7 @@
 #include <vector>
 #include <unordered_map>
 
-namespace versioned_graph {
+namespace chronograph {
 
 class Graph {
 public:
@@ -38,7 +38,15 @@ public:
     const std::vector<Event>& getEventLog() const;
 
 private:
+    // Append-only event history
     std::vector<Event> eventLog_;
+
+    // Graph state containers
+    std::unordered_map<std::string, Node> nodes_;
+    std::unordered_map<std::string, Edge> edges_;
+    // Adjacency maps for traversal
+    std::unordered_map<std::string, std::vector<std::string>> outgoing_;
+    std::unordered_map<std::string, std::vector<std::string>> incoming_;
 };
 
-}  // namespace versioned_graph
+}  // namespace chronograph
