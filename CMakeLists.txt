@@ -25,20 +25,30 @@ target_include_directories(chronograph PUBLIC
 )
 
 # Enable testing
-# enable_testing()
+enable_testing()
+
+# Node: Update commit hash for GTest as needed
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+)
+# For windows: prevent overriding compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
 
 # Find GoogleTest for unit tests
-# find_package(GTest REQUIRED)
-# include_directories(${GTEST_INCLUDE_DIRS})
+find_package(GTest REQUIRED)
+include_directories(${GTEST_INCLUDE_DIRS})
 
 # Unit test targets
 # add_executable(test_Event tests/test_Event.cpp)
 # target_link_libraries(test_Event PRIVATE chronograph GTest::GTest GTest::Main)
 # add_test(NAME test_Event COMMAND test_Event)
 
-# add_executable(test_Graph tests/test_Graph.cpp)
-# target_link_libraries(test_Graph PRIVATE chronograph GTest::GTest GTest::Main)
-# add_test(NAME test_Graph COMMAND test_Graph)
+add_executable(test_Graph tests/test_Graph.cpp)
+target_link_libraries(test_Graph PRIVATE chronograph GTest::GTest GTest::Main)
+add_test(NAME test_Graph COMMAND test_Graph)
 
 # add_executable(test_Snapshot tests/test_Snapshot.cpp)
 # target_link_libraries(test_Snapshot PRIVATE chronograph GTest::GTest GTest::Main)

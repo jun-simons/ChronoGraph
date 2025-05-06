@@ -37,6 +37,12 @@ public:
     // Access event log
     const std::vector<Event>& getEventLog() const;
 
+    // Access current state
+    const std::unordered_map<std::string, Node>& getNodes() const;
+    const std::unordered_map<std::string, Edge>& getEdges() const;
+    const std::unordered_map<std::string, std::vector<std::string>>& getOutgoing() const;
+    const std::unordered_map<std::string, std::vector<std::string>>& getIncoming() const;
+
 private:
     // Append-only event history
     std::vector<Event> eventLog_;
