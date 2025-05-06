@@ -6,6 +6,7 @@
 
 #include <random>
 #include <sstream>
+#include <algorithm>
 
 namespace chronograph {
 
@@ -46,7 +47,38 @@ void Graph::addNode(const std::string& id,
 }
 
 void Graph::delNode(const std::string& id, std::int64_t timestamp) {
-    // TODO: construct a DEL_NODE event and append
+    Event e;
+    e.id = generateEventId();
+    e.timestamp = timestamp;
+    e.type = EventType::DEL_NODE;
+    e.entityId = id;
+    addEvent(e);
+
+    // 1) Delete all outgoing edges
+    if (auto oit = outgoing_.find(id); oit != outgoing_.end()) {
+        auto edgesToDel = oit->second;  // copy list
+        for (const auto& eid : edgesToDel) {
+            // ensure we only delete once
+            if (edges_.count(eid)) {
+                delEdge(eid, timestamp);
+            }
+        }
+    }
+
+    // 2) Delete all incoming edges
+    if (auto iit = incoming_.find(id); iit != incoming_.end()) {
+        auto edgesToDel = iit->second;  // copy list
+        for (const auto& eid : edgesToDel) {
+            if (edges_.count(eid)) {
+                delEdge(eid, timestamp);
+            }
+        }
+    }
+
+    // 3) Erase the node itself and its adjacency lists
+    nodes_.erase(id);
+    outgoing_.erase(id);
+    incoming_.erase(id);
 }
 
 void Graph::addEdge(const std::string& id,
@@ -54,11 +86,48 @@ void Graph::addEdge(const std::string& id,
                     const std::string& to,
                     const std::map<std::string, std::string>& attrs,
                     std::int64_t timestamp) {
-    // TODO: construct an ADD_EDGE event and append
+    // Append event
+    Event e;
+    e.id = generateEventId();
+    e.timestamp = timestamp;
+    e.type = EventType::ADD_EDGE;
+    e.entityId  = id;
+    e.payload  = attrs;
+    addEvent(e);
+    // Store the edge
+    edges_[id] = Edge{id, from, to, attrs};
+    // Update adjacency
+    outgoing_[from].push_back(id);
+    incoming_[to].push_back(id);
 }
 
 void Graph::delEdge(const std::string& id, std::int64_t timestamp) {
-    // TODO: construct a DEL_EDGE event and append
+    Event e;
+    e.id = generateEventId();
+    e.timestamp = timestamp;
+    e.type = EventType::DEL_EDGE;
+    e.entityId = id;
+    // no payload for deletions
+    addEvent(e);
+
+    auto it = edges_.find(id);
+    if (it == edges_.end()) return;
+
+    // extract endpoints before erasing
+    const std::string from = it->second.from;
+    const std::string to   = it->second.to;
+
+    edges_.erase(it);
+
+    // remove from outgoing[from]
+    auto& outList = outgoing_[from];
+    outList.erase(std::remove(outList.begin(), outList.end(), id),
+                  outList.end());
+
+    // remove from incoming[to]
+    auto& inList  = incoming_[to];
+    inList.erase(std::remove(inList.begin(), inList.end(), id),
+                 inList.end());
 }
 
 void Graph::updateNode(const std::string& id,
