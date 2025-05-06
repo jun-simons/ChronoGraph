@@ -147,3 +147,61 @@ TEST(GraphDelNode, BasicSmoke) {
     ASSERT_EQ(g.getIncoming().count("n2"), 1u);
     EXPECT_TRUE(g.getIncoming().at("n2").empty());
 }
+
+TEST(GraphUpdateNode, MergesAttributesAndEmitsEvent) {
+    Graph g;
+    // Setup: add a node with two attrs
+    g.addNode("n1", {{"color","red"}, {"size","L"}}, /*ts=*/1);
+
+    // Update: change size and add a new attr
+    int64_t tsUpd = 2;
+    g.updateNode("n1", {{"size","XL"}, {"status","active"}}, tsUpd);
+
+    // We should have 2 events: ADD_NODE + UPDATE_NODE
+    ASSERT_EQ(g.getEventLog().size(), 2u);
+    const Event& ev = g.getEventLog().back();
+    EXPECT_EQ(ev.type, EventType::UPDATE_NODE);
+    EXPECT_EQ(ev.entityId, "n1");
+    EXPECT_EQ(ev.timestamp, tsUpd);
+    EXPECT_EQ(ev.payload.at("size"), "XL");
+    EXPECT_EQ(ev.payload.at("status"), "active");
+
+    // Node attrs should now be merged
+    const Node& node = g.getNodes().at("n1");
+    EXPECT_EQ(node.attributes.at("color"), "red");      // unchanged
+    EXPECT_EQ(node.attributes.at("size"),  "XL");       // updated
+    EXPECT_EQ(node.attributes.at("status"), "active");  // new
+}
+
+TEST(GraphUpdateEdge, MergesAttributesAndEmitsEvent) {
+    Graph g;
+    // Setup two nodes + edge
+    g.addNode("n1", {}, /*ts=*/10);
+    g.addNode("n2", {}, /*ts=*/20);
+    g.addEdge("e1", "n1", "n2", {{"weight","5"}, {"type","undirected"}}, /*ts=*/30);
+
+    // Update: change weight and add label
+    int64_t tsUpd = 40;
+    g.updateEdge("e1", {{"weight","10"}, {"label","flow"}}, tsUpd);
+
+    // 4 total events
+    ASSERT_EQ(g.getEventLog().size(), 4u);
+    const Event& ev = g.getEventLog().back();
+    EXPECT_EQ(ev.type, EventType::UPDATE_EDGE);
+    EXPECT_EQ(ev.entityId, "e1");
+    EXPECT_EQ(ev.timestamp, tsUpd);
+    EXPECT_EQ(ev.payload.at("weight"), "10");
+    EXPECT_EQ(ev.payload.at("label"),  "flow");
+
+    // Edge attrs should now be merged
+    const Edge& edge = g.getEdges().at("e1");
+    EXPECT_EQ(edge.attributes.at("weight"), "10");   // updated
+    EXPECT_EQ(edge.attributes.at("type"),   "undirected"); // unchanged
+    EXPECT_EQ(edge.attributes.at("label"),  "flow");   // new
+
+    // Adjacency must remain intact
+    ASSERT_EQ(g.getOutgoing().at("n1").size(), 1u);
+    EXPECT_EQ(g.getOutgoing().at("n1")[0], "e1");
+    ASSERT_EQ(g.getIncoming().at("n2").size(), 1u);
+    EXPECT_EQ(g.getIncoming().at("n2")[0], "e1");
+}

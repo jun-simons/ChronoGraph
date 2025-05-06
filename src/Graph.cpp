@@ -54,7 +54,7 @@ void Graph::delNode(const std::string& id, std::int64_t timestamp) {
     e.entityId = id;
     addEvent(e);
 
-    // 1) Delete all outgoing edges
+    // Delete all outgoing edges
     if (auto oit = outgoing_.find(id); oit != outgoing_.end()) {
         auto edgesToDel = oit->second;  // copy list
         for (const auto& eid : edgesToDel) {
@@ -65,7 +65,7 @@ void Graph::delNode(const std::string& id, std::int64_t timestamp) {
         }
     }
 
-    // 2) Delete all incoming edges
+    // Delete all incoming edges
     if (auto iit = incoming_.find(id); iit != incoming_.end()) {
         auto edgesToDel = iit->second;  // copy list
         for (const auto& eid : edgesToDel) {
@@ -75,7 +75,7 @@ void Graph::delNode(const std::string& id, std::int64_t timestamp) {
         }
     }
 
-    // 3) Erase the node itself and its adjacency lists
+    // Erase the node itself and its adjacency lists
     nodes_.erase(id);
     outgoing_.erase(id);
     incoming_.erase(id);
@@ -133,13 +133,41 @@ void Graph::delEdge(const std::string& id, std::int64_t timestamp) {
 void Graph::updateNode(const std::string& id,
                        const std::map<std::string, std::string>& attrs,
                        std::int64_t timestamp) {
-    // TODO: construct an UPDATE_NODE event and append
+    Event e;
+    e.id = generateEventId();
+    e.timestamp = timestamp;
+    e.type = EventType::UPDATE_NODE;
+    e.entityId = id;
+    e.payload = attrs;
+    addEvent(e);
+    // Merge into live node, if it exists
+    auto it = nodes_.find(id);
+    if (it != nodes_.end()) {
+        auto& nodeAttrs = it->second.attributes;
+        for (const auto& [k,v] : attrs) {
+            nodeAttrs[k] = v;
+        }
+    }
 }
 
 void Graph::updateEdge(const std::string& id,
                        const std::map<std::string, std::string>& attrs,
                        std::int64_t timestamp) {
-    // TODO: construct an UPDATE_EDGE event and append
+    Event e;
+    e.id = generateEventId();
+    e.timestamp = timestamp;
+    e.type = EventType::UPDATE_EDGE;
+    e.entityId = id;
+    e.payload = attrs;
+    addEvent(e);
+    // Merge into live edge, if it exists
+    auto it = edges_.find(id);
+    if (it != edges_.end()) {
+        auto& edgeAttrs = it->second.attributes;
+        for (const auto& [k,v] : attrs) {
+            edgeAttrs[k] = v;
+        }
+    }
 }
 
 // Getters
