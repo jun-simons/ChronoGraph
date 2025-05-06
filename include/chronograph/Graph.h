@@ -36,6 +36,16 @@ public:
 
     // Access event log
     const std::vector<Event>& getEventLog() const;
+    // expose checkpoints so Snapshot can use them
+    struct Checkpoint {
+        std::int64_t timestamp;
+        size_t eventIndex;
+        std::unordered_map<std::string, Node> nodes;
+        std::unordered_map<std::string, Edge> edges;
+        std::unordered_map<std::string, std::vector<std::string>> outgoing;
+        std::unordered_map<std::string, std::vector<std::string>> incoming;
+    };
+    const std::vector<Checkpoint>& getCheckpoints() const;
 
     // Access current state
     const std::unordered_map<std::string, Node>& getNodes() const;
@@ -53,6 +63,11 @@ private:
     // Adjacency maps for traversal
     std::unordered_map<std::string, std::vector<std::string>> outgoing_;
     std::unordered_map<std::string, std::vector<std::string>> incoming_;
+
+    // Checkpoint storage & parameters
+    std::vector<Checkpoint> checkpoints_;
+    static constexpr size_t kCheckpointInterval = 5000;
+    void maybeCreateCheckpoint(const Event& e);
 };
 
 }  // namespace chronograph

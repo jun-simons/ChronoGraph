@@ -18,6 +18,8 @@ public:
 private:
     std::unordered_map<std::string, Node> nodes_;
     std::unordered_map<std::string, Edge> edges_;
+    std::unordered_map<std::string, std::vector<std::string>> outgoing_;
+    std::unordered_map<std::string, std::vector<std::string>> incoming_;
 };
 
 }  // namespace chronograph

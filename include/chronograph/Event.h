@@ -18,10 +18,13 @@ enum class EventType {
 
 struct Event {
     std::string id;
-    std::int64_t timestamp;  // milliseconds since epoch
+    std::int64_t timestamp;
     EventType type;
-    std::string entityId;
-    std::map<std::string, std::string> payload;  // arbitrary key/value
+    std::string entityId; // nodeId or edgeId
+    std::map<std::string,std::string> payload; // attributes for ADD_/UPDATE_
+    // for edge‐events, record endpoints
+    std::string from;
+    std::string to;
 };
 
 }  // namespace chronograph

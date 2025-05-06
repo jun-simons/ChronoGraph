@@ -24,6 +24,26 @@ namespace {
 
 void Graph::addEvent(const Event& event) {
     eventLog_.push_back(event);
+    // after state update in each mutator, call:
+    // maybeCreateCheckpoint(event);
+}
+const std::vector<Event>& Graph::getEventLog() const { 
+    return eventLog_; 
+}
+const std::vector<Graph::Checkpoint>& Graph::getCheckpoints() const { 
+    return checkpoints_; 
+}
+void Graph::maybeCreateCheckpoint(const Event& e) {
+    if (eventLog_.size() % kCheckpointInterval == 0) {
+        checkpoints_.push_back({
+            /*timestamp=*/e.timestamp,
+            /*eventIndex=*/eventLog_.size(),
+            /*nodes=*/nodes_,
+            /*edges=*/edges_,
+            /*outgoing=*/outgoing_,
+            /*incoming=*/incoming_
+        });
+    }
 }
 
 void Graph::addNode(const std::string& id,
@@ -44,6 +64,7 @@ void Graph::addNode(const std::string& id,
     // TODO: properly update adjacency lists
     outgoing_.emplace(id, std::vector<std::string>{});
     incoming_.emplace(id, std::vector<std::string>{});
+    maybeCreateCheckpoint(e);
 }
 
 void Graph::delNode(const std::string& id, std::int64_t timestamp) {
@@ -79,6 +100,8 @@ void Graph::delNode(const std::string& id, std::int64_t timestamp) {
     nodes_.erase(id);
     outgoing_.erase(id);
     incoming_.erase(id);
+
+    maybeCreateCheckpoint(e);
 }
 
 void Graph::addEdge(const std::string& id,
@@ -99,6 +122,8 @@ void Graph::addEdge(const std::string& id,
     // Update adjacency
     outgoing_[from].push_back(id);
     incoming_[to].push_back(id);
+
+    maybeCreateCheckpoint(e);
 }
 
 void Graph::delEdge(const std::string& id, std::int64_t timestamp) {
@@ -128,6 +153,8 @@ void Graph::delEdge(const std::string& id, std::int64_t timestamp) {
     auto& inList  = incoming_[to];
     inList.erase(std::remove(inList.begin(), inList.end(), id),
                  inList.end());
+
+    maybeCreateCheckpoint(e);
 }
 
 void Graph::updateNode(const std::string& id,
@@ -148,6 +175,8 @@ void Graph::updateNode(const std::string& id,
             nodeAttrs[k] = v;
         }
     }
+
+    maybeCreateCheckpoint(e);
 }
 
 void Graph::updateEdge(const std::string& id,
@@ -168,6 +197,8 @@ void Graph::updateEdge(const std::string& id,
             edgeAttrs[k] = v;
         }
     }
+
+    maybeCreateCheckpoint(e);
 }
 
 // Getters
@@ -196,5 +227,7 @@ const std::unordered_map<std::string, std::vector<std::string>>&
 Graph::getIncoming() const {
     return incoming_;
 }
+
+
 
 }  // namespace chronograph
