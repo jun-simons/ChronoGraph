@@ -49,3 +49,7 @@ ctest --output-on-failure
 
 # 5) (Optional) Try the example
 ./examples/basic_snapshot
+```
+
+This project is in early development 
+(www.junsimons.com)
