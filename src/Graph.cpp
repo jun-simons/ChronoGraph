@@ -36,6 +36,13 @@ void Graph::addNode(const std::string& id,
     e.entityId = id;
     e.payload = attrs;
     addEvent(e);
+
+    // Update graph state
+    nodes_[id] = Node{id, attrs};
+
+    // TODO: properly update adjacency lists
+    outgoing_.emplace(id, std::vector<std::string>{});
+    incoming_.emplace(id, std::vector<std::string>{});
 }
 
 void Graph::delNode(const std::string& id, std::int64_t timestamp) {
@@ -66,8 +73,31 @@ void Graph::updateEdge(const std::string& id,
     // TODO: construct an UPDATE_EDGE event and append
 }
 
-const std::vector<Event>& Graph::getEventLog() const {
+// Getters
+
+const std::vector<Event>&
+Graph::getEventLog() const {
     return eventLog_;
+}
+
+const std::unordered_map<std::string, Node>&
+Graph::getNodes() const {
+    return nodes_;
+}
+
+const std::unordered_map<std::string, Edge>&
+Graph::getEdges() const {
+    return edges_;
+}
+
+const std::unordered_map<std::string, std::vector<std::string>>&
+Graph::getOutgoing() const {
+    return outgoing_;
+}
+
+const std::unordered_map<std::string, std::vector<std::string>>&
+Graph::getIncoming() const {
+    return incoming_;
 }
 
 }  // namespace chronograph
