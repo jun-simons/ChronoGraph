@@ -1,0 +1,23 @@
+// include/versioned_graph/Snapshot.h
+#pragma once
+
+#include "Graph.h"
+#include <unordered_map>
+
+namespace versioned_graph {
+
+class Snapshot {
+public:
+    // Build snapshot by replaying events up to and including `timestamp`
+    Snapshot(const Graph& graph, std::int64_t timestamp);
+
+    // Accessors for nodes and edges at this point in time
+    const std::unordered_map<std::string, Node>& getNodes() const;
+    const std::unordered_map<std::string, Edge>& getEdges() const;
+
+private:
+    std::unordered_map<std::string, Node> nodes_;
+    std::unordered_map<std::string, Edge> edges_;
+};
+
+}  // namespace versioned_graph

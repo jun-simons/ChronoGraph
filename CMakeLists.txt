@@ -1,0 +1,52 @@
+cmake_minimum_required(VERSION 3.10)
+project(versioned_graph VERSION 0.1.0 LANGUAGES CXX)
+
+# Use C++17
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Include public headers
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
+# Core library target
+add_library(versioned_graph
+    src/Event.cpp
+    src/Node.cpp
+    src/Edge.cpp
+    src/Graph.cpp
+    src/Snapshot.cpp
+)
+
+# Specify include directories for consumers
+target_include_directories(versioned_graph PUBLIC
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+# Enable testing
+# enable_testing()
+
+# Find GoogleTest for unit tests
+# find_package(GTest REQUIRED)
+# include_directories(${GTEST_INCLUDE_DIRS})
+
+# Unit test targets
+# add_executable(test_Event tests/test_Event.cpp)
+# target_link_libraries(test_Event PRIVATE versioned_graph GTest::GTest GTest::Main)
+# add_test(NAME test_Event COMMAND test_Event)
+
+# add_executable(test_Graph tests/test_Graph.cpp)
+# target_link_libraries(test_Graph PRIVATE versioned_graph GTest::GTest GTest::Main)
+# add_test(NAME test_Graph COMMAND test_Graph)
+
+# add_executable(test_Snapshot tests/test_Snapshot.cpp)
+# target_link_libraries(test_Snapshot PRIVATE versioned_graph GTest::GTest GTest::Main)
+# add_test(NAME test_Snapshot COMMAND test_Snapshot)
+
+# Example executable
+# add_executable(basic_snapshot examples/basic_snapshot.cpp)
+# target_link_libraries(basic_snapshot PRIVATE versioned_graph)
+
+# Python bindings (for future addition)
+# add_subdirectory(python)
