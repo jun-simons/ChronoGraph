@@ -76,7 +76,7 @@ workingGraph_.updateEdge(id, attrs, timestamp);
 
 
 // --- Commit staged events ---
-std::string Repository::commit(const std::string&) {
+std::string Repository::commit(const std::string& message) {
     const auto& log = workingGraph_.getEventLog();
     size_t total = log.size();
 
@@ -93,7 +93,7 @@ std::string Repository::commit(const std::string&) {
 
     // Make a commit (add to commits map)
     std::string newId = generateCommitId();
-    Commit c{ newId, { HEAD_commitId_ }, std::move(delta) };
+    Commit c{ newId, { HEAD_commitId_ }, std::move(delta), message };
     commits_.emplace(newId, c);
 
     // Advance branch & HEAD
@@ -110,34 +110,68 @@ void Repository::branch(const std::string& branchName) {
     branches_[branchName] = HEAD_commitId_;
 }
 
-// ——— Checkout ———
 void Repository::checkout(const std::string& branchName) {
     auto it = branches_.find(branchName);
-    if (it == branches_.end()) {
-        throw std::runtime_error("Branch '" + branchName + "' does not exist");
-    }
+     if (it == branches_.end()) {
+         throw std::runtime_error("Branch '" + branchName + "' does not exist");
+     }
+    const std::string newCommit = it->second;
+    const std::string oldCommit = HEAD_commitId_;
+    // 1) Switch HEAD to the target branch
     HEAD_ = branchName;
-    HEAD_commitId_ = it->second;
+    HEAD_commitId_ = newCommit;
 
-    // Rebuild the workingGraph_ from scratch
-    // Collect all ancestor commit IDs in order
-    std::vector<std::string> chain;
+    // 2) If nothing changed, no need to update graph
+    if (newCommit == oldCommit) {
+        // make sure lastCommittedEventIndex_ stays correct
+        lastCommittedEventIndex_ = workingGraph_.getEventLog().size();
+        return;
+    }
+
+    // 3) Otherwise, rebuild or fast‐forward…
+    // Collect oldChain from old HEAD, newChain from newCommit
+    std::vector<std::string> oldChain, newChain;
     std::unordered_set<std::string> seen;
-    buildAncestors(HEAD_commitId_, chain, seen);
+    buildAncestors(oldCommit, oldChain, seen);
+    seen.clear();
+    buildAncestors(newCommit, newChain, seen);
 
-    // Wipe graph history & state
-    workingGraph_.clearGraph();
+    bool isDescendant = false;
+    if (oldChain.size() <= newChain.size()) {
+      isDescendant = std::equal(
+        oldChain.begin(), oldChain.end(),
+        newChain.begin()
+      );
+    }
 
-    // Replay every commit’s events
-    for (auto& cid : chain) {
-        const Commit& cm = commits_.at(cid);
-        for (auto& e : cm.events) {
-            workingGraph_.addEvent(e);
-            workingGraph_.applyEvent(e);
+    // if old chain is a descendant of the new chain
+    // * we fast forward new commits to match the branch
+    // else if the old chain is a descendant of the new chain
+    // * rebuild the chain based on prior commits
+    if (isDescendant) { 
+        // fast‐forward only the missing commits
+        auto it2 = std::find(newChain.begin(), newChain.end(), oldCommit);
+        ++it2;
+        for (; it2 != newChain.end(); ++it2) {
+            const Commit& cm = commits_.at(*it2);
+            for (auto& e : cm.events) {
+                workingGraph_.addEvent(e);
+                workingGraph_.applyEvent(e);
+            }
+        }
+    } else {
+        // full rebuild
+        workingGraph_.clearGraph();
+        for (auto& cid : newChain) {
+            const Commit& cm = commits_.at(cid);
+            for (auto& e : cm.events) {
+                workingGraph_.addEvent(e);
+                workingGraph_.applyEvent(e);
+            }
         }
     }
 
-    // Log now has exactly chain’s events
+    // update how many events we have in the log now
     lastCommittedEventIndex_ = workingGraph_.getEventLog().size();
 }
 
@@ -173,8 +207,7 @@ std::vector<Commit> Repository::listCommits(const std::string& branchName) const
 
 void Repository::buildAncestors(const std::string& cid,
                                 std::vector<std::string>& out,
-                                std::unordered_set<std::string>& seen) const
-{
+                                std::unordered_set<std::string>& seen) const {
     if (!seen.insert(cid).second) return;
     const Commit& cm = commits_.at(cid);
     for (auto& pid : cm.parents) {

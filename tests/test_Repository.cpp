@@ -1,7 +1,9 @@
 // tests/test_Repository.cpp
 
 #include "chronograph/Repository.h"
+#include "chronograph/Snapshot.h"
 #include <gtest/gtest.h>
+#include <limits>
 #include <map>
 #include <string>
 #include <algorithm>
@@ -80,4 +82,183 @@ TEST(RepositoryListCommits, CommitSequence) {
     // commits[0] is the implicit root commit (empty events)
     EXPECT_EQ(commits[1].id, c1);
     EXPECT_EQ(commits[2].id, c2);
+}
+
+
+TEST(RepositoryBranchIsolation, MultiBranchWithSnapshots) {
+    auto repo = Repository::init("main");
+
+    // Commit a node on main at ts=1
+    repo.addNode("a", {{"val","1"}}, /*ts=*/1);
+    auto c1 = repo.commit("add a");
+
+    // Create & switch to dev branch
+    repo.branch("dev");
+    repo.checkout("dev");
+    // Commit b on dev at ts=2
+    repo.addNode("b", {{"val","2"}}, /*ts=*/2);
+    auto c2 = repo.commit("add b");
+    // Commit c on dev at ts=3
+    repo.addNode("c", {{"val","3"}}, /*ts=*/3);
+    auto c3 = repo.commit("add c");
+
+    // --- main should only have a ---
+    repo.checkout("main");
+    {
+      // working-graph check
+      const auto& nodes = repo.graph().getNodes();
+      EXPECT_EQ(nodes.size(), 1u);
+      EXPECT_TRUE(nodes.count("a"));
+      EXPECT_FALSE(nodes.count("b"));
+      EXPECT_FALSE(nodes.count("c"));
+
+      // snapshot check
+      Snapshot s(repo.graph(), std::numeric_limits<int64_t>::max());
+      const auto& sn = s.getNodes();
+      EXPECT_EQ(sn.size(), 1u);
+      EXPECT_TRUE(sn.count("a"));
+    }
+
+    // --- dev should have a,b,c ---
+    repo.checkout("dev");
+    {
+      const auto& nodes = repo.graph().getNodes();
+      EXPECT_EQ(nodes.size(), 3u);
+      EXPECT_TRUE(nodes.count("a"));
+      EXPECT_TRUE(nodes.count("b"));
+      EXPECT_TRUE(nodes.count("c"));
+
+      Snapshot s(repo.graph(), std::numeric_limits<int64_t>::max());
+      const auto& sn = s.getNodes();
+      EXPECT_EQ(sn.size(), 3u);
+      EXPECT_TRUE(sn.count("a"));
+      EXPECT_TRUE(sn.count("b"));
+      EXPECT_TRUE(sn.count("c"));
+    }
+
+    // Create & switch to feature from dev
+    repo.branch("feature");
+    repo.checkout("feature");
+    // Commit edge a->b on feature at ts=4
+    repo.addEdge("e_ab", "a", "b", {{"w","10"}}, /*ts=*/4);
+    auto c4 = repo.commit("add edge ab");
+
+    // --- feature should have a,b,c and e_ab ---
+    {
+      const auto& nodes = repo.graph().getNodes();
+      const auto& edges = repo.graph().getEdges();
+      EXPECT_EQ(nodes.size(), 3u);
+      EXPECT_EQ(edges.size(), 1u);
+      EXPECT_TRUE(edges.count("e_ab"));
+
+      Snapshot s(repo.graph(), std::numeric_limits<int64_t>::max());
+      const auto& sn = s.getNodes();
+      const auto& se = s.getEdges();
+      EXPECT_EQ(sn.size(), 3u);
+      EXPECT_EQ(se.size(), 1u);
+      EXPECT_TRUE(se.count("e_ab"));
+    }
+
+    // --- dev still has no e_ab ---
+    repo.checkout("dev");
+    {
+      const auto& edges = repo.graph().getEdges();
+      EXPECT_TRUE(edges.empty());
+
+      Snapshot s(repo.graph(), std::numeric_limits<int64_t>::max());
+      const auto& se = s.getEdges();
+      EXPECT_TRUE(se.empty());
+    }
+
+    // --- main still only a ---
+    repo.checkout("main");
+    {
+      const auto& nodes = repo.graph().getNodes();
+      const auto& edges = repo.graph().getEdges();
+      EXPECT_EQ(nodes.size(), 1u);
+      EXPECT_TRUE(nodes.count("a"));
+      EXPECT_TRUE(edges.empty());
+
+      Snapshot s(repo.graph(), std::numeric_limits<int64_t>::max());
+      const auto& sn = s.getNodes();
+      const auto& se = s.getEdges();
+      EXPECT_EQ(sn.size(), 1u);
+      EXPECT_TRUE(sn.count("a"));
+      EXPECT_TRUE(se.empty());
+    }
+
+    // --- check feature again, it remains correct ---
+    repo.checkout("feature");
+    {
+      const auto& nodes = repo.graph().getNodes();
+      const auto& edges = repo.graph().getEdges();
+      EXPECT_EQ(nodes.size(), 3u);
+      EXPECT_EQ(edges.size(), 1u);
+      EXPECT_TRUE(edges.count("e_ab"));
+
+      Snapshot s(repo.graph(), std::numeric_limits<int64_t>::max());
+      const auto& sn = s.getNodes();
+      const auto& se = s.getEdges();
+      EXPECT_EQ(sn.size(), 3u);
+      EXPECT_EQ(se.size(), 1u);
+      EXPECT_TRUE(se.count("e_ab"));
+    }
+}
+
+TEST(RepositoryNoChangeCommit, IdUnchanged) {
+    auto repo = Repository::init("main");
+    // initial commit is root; two no-op commits should return same ID
+    auto rootId = repo.commit("first no-op");
+    auto sameId = repo.commit("second no-op");
+    EXPECT_EQ(rootId, sameId);
+
+    // listCommits should only have the root commit
+    auto commits = repo.listCommits("main");
+    ASSERT_EQ(commits.size(), 1u);
+    EXPECT_EQ(commits[0].id, rootId);
+}
+
+TEST(RepositoryUpdateOperations, NodeEdgeUpdate) {
+    auto repo = Repository::init("main");
+    // Add a node and commit
+    repo.addNode("n", {{"x","old"}}, /*ts=*/1);
+    auto c1 = repo.commit("add n");
+
+    // Update the node and commit
+    repo.updateNode("n", {{"x","new"}, {"y","v"}}, /*ts=*/2);
+    auto c2 = repo.commit("update n");
+
+    // On main, the graph should reflect the updated attributes
+    {
+        const auto& nodes = repo.graph().getNodes();
+        ASSERT_EQ(nodes.size(), 1u);
+        const auto& n = nodes.at("n");
+        EXPECT_EQ(n.attributes.at("x"), "new");
+        EXPECT_EQ(n.attributes.at("y"), "v");
+    }
+
+    // Add a second node and an edge, then update the edge
+    repo.addNode("m", {}, /*ts=*/3);
+    repo.addEdge("e", "n", "m", {{"wt","5"}}, /*ts=*/4);
+    auto c3 = repo.commit("add edge");
+
+    repo.updateEdge("e", {{"wt","15"}, {"label","flow"}}, /*ts=*/5);
+    auto c4 = repo.commit("update edge");
+
+    // Edge should exist with merged attributes
+    {
+        const auto& edges = repo.graph().getEdges();
+        ASSERT_EQ(edges.size(), 1u);
+        const auto& e = edges.at("e");
+        EXPECT_EQ(e.attributes.at("wt"),    "15");
+        EXPECT_EQ(e.attributes.at("label"), "flow");
+    }
+
+    // listCommits should be: root, c1, c2, c3, c4
+    auto commits = repo.listCommits("main");
+    ASSERT_EQ(commits.size(), 5u);
+    EXPECT_EQ(commits[1].id, c1);
+    EXPECT_EQ(commits[2].id, c2);
+    EXPECT_EQ(commits[3].id, c3);
+    EXPECT_EQ(commits[4].id, c4);
 }

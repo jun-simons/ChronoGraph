@@ -370,7 +370,7 @@ void Graph::clearGraph() {
     incoming_.clear();
 }
 
-// Graph Getters
+// ---- Graph Getters ----
 
 const std::unordered_map<std::string, Node>&
 Graph::getNodes() const {

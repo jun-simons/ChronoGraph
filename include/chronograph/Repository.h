@@ -17,6 +17,7 @@ struct Commit {
     std::string id;         // commit hash/UUID
     std::vector<std::string> parents;  // parent commit IDs (1 or 2 for merges)
     std::vector<Event> events;    // the delta introduced by this commit
+    std::string message;
 };
 
 /// Simple git-style repository for a graph
