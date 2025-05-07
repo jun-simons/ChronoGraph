@@ -91,3 +91,48 @@ TEST(SnapshotUpdates, NodeAttributeUpdate) {
     EXPECT_EQ(sNew.getNodes().at("n1").attributes.at("x"), "new");
     EXPECT_EQ(sNew.getNodes().at("n1").attributes.at("y"), "added");
 }
+
+TEST(SnapshotEdgeDeletion, EdgeGoneAfterDelete) {
+    Graph g;
+    g.addNode("n1", {}, /*ts=*/10);
+    g.addNode("n2", {}, /*ts=*/10);
+    g.addEdge("e1", "n1", "n2", {{"w","5"}}, /*ts=*/20);
+
+    // Delete the edge at ts=30
+    g.delEdge("e1", /*ts=*/30);
+
+    // Snapshot before deletion should still see the edge
+    Snapshot sBefore(g, 29);
+    ASSERT_EQ(sBefore.getEdges().size(), 1u);
+    EXPECT_TRUE(sBefore.getEdges().count("e1"));
+
+    // Snapshot at or after deletion should see no edges
+    Snapshot sAfter(g, 30);
+    EXPECT_TRUE(sAfter.getEdges().empty());
+}
+
+TEST(SnapshotEdgeUpdate, AttributesMergeCorrectly) {
+    Graph g;
+    g.addNode("n1", {}, /*ts=*/100);
+    g.addNode("n2", {}, /*ts=*/100);
+    g.addEdge("e1", "n1", "n2", {{"weight","5"}, {"type","orig"}}, /*ts=*/200);
+
+    // Update the edge at ts=300
+    g.updateEdge("e1", {{"weight","15"}, {"label","active"}}, /*ts=*/300);
+
+    // Snapshot before update
+    Snapshot sOld(g, 250);
+    ASSERT_EQ(sOld.getEdges().size(), 1u);
+    const auto& eOld = sOld.getEdges().at("e1");
+    EXPECT_EQ(eOld.attributes.at("weight"), "5");     // original
+    EXPECT_EQ(eOld.attributes.at("type"),   "orig");  // unchanged
+    EXPECT_EQ(eOld.attributes.count("label"), 0u);    // not present yet
+
+    // Snapshot at update time
+    Snapshot sNew(g, 300);
+    ASSERT_EQ(sNew.getEdges().size(), 1u);
+    const auto& eNew = sNew.getEdges().at("e1");
+    EXPECT_EQ(eNew.attributes.at("weight"), "15");    // updated
+    EXPECT_EQ(eNew.attributes.at("type"),   "orig");  // still there
+    EXPECT_EQ(eNew.attributes.at("label"),  "active");// new attr
+}
