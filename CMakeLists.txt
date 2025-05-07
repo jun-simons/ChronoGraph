@@ -54,6 +54,10 @@ add_executable(test_Snapshot tests/test_Snapshot.cpp)
 target_link_libraries(test_Snapshot PRIVATE chronograph GTest::GTest GTest::Main)
 add_test(NAME test_Snapshot COMMAND test_Snapshot)
 
+add_executable(test_Diff tests/test_Diff.cpp)
+target_link_libraries(test_Diff PRIVATE chronograph GTest::GTest GTest::Main)
+add_test(NAME test_Diff COMMAND test_Diff)
+
 # Example executable
 # add_executable(basic_snapshot examples/basic_snapshot.cpp)
 # target_link_libraries(basic_snapshot PRIVATE chronograph)

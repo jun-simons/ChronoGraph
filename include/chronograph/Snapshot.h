@@ -1,10 +1,18 @@
 // include/chronograph/Snapshot.h
 #pragma once
 
-#include "Graph.h"
+#include <cstdint>
+#include <string>
 #include <unordered_map>
+#include <vector>
+
+#include "Node.h"
+#include "Edge.h"
 
 namespace chronograph {
+
+// forward declaration
+class Graph;
 
 class Snapshot {
 public:

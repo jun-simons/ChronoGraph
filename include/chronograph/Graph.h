@@ -4,8 +4,10 @@
 #include "Event.h"
 #include "Node.h"
 #include "Edge.h"
+#include "Snapshot.h"
 #include <vector>
 #include <unordered_map>
+#include <map>
 
 namespace chronograph {
 
@@ -52,6 +54,19 @@ public:
     const std::unordered_map<std::string, Edge>& getEdges() const;
     const std::unordered_map<std::string, std::vector<std::string>>& getOutgoing() const;
     const std::unordered_map<std::string, std::vector<std::string>>& getIncoming() const;
+
+    struct DiffResult {
+        // Nodes
+        std::vector<Node>                            nodesAdded;
+        std::vector<std::string>                     nodesRemoved;
+        std::vector<std::pair<Node,Node>>            nodesUpdated;   // {before, after}
+  
+        // Edges
+        std::vector<Edge>                            edgesAdded;
+        std::vector<std::string>                     edgesRemoved;
+        std::vector<std::pair<Edge,Edge>>            edgesUpdated;   // {before, after}
+      };
+    DiffResult diff(std::int64_t t1, std::int64_t t2) const;
 
 private:
     // Append-only event history

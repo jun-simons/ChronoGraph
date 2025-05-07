@@ -1,6 +1,7 @@
 // src/Snapshot.cpp
 #include "chronograph/Snapshot.h"
 #include "chronograph/Event.h"
+#include "chronograph/Graph.h"
 #include <algorithm>
 
 namespace chronograph {
