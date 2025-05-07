@@ -16,6 +16,7 @@ add_library(chronograph
     src/Edge.cpp
     src/Graph.cpp
     src/Snapshot.cpp
+    src/Repository.cpp
 )
 
 # Specify include directories for consumers
@@ -57,6 +58,10 @@ add_test(NAME test_Snapshot COMMAND test_Snapshot)
 add_executable(test_Diff tests/test_Diff.cpp)
 target_link_libraries(test_Diff PRIVATE chronograph GTest::GTest GTest::Main)
 add_test(NAME test_Diff COMMAND test_Diff)
+
+add_executable(test_Repository tests/test_Repository.cpp)
+target_link_libraries(test_Repository PRIVATE chronograph GTest::GTest GTest::Main)
+add_test(NAME test_Repository COMMAND test_Repository)
 
 # Example executable
 # add_executable(basic_snapshot examples/basic_snapshot.cpp)

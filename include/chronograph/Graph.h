@@ -49,12 +49,6 @@ public:
     };
     const std::vector<Checkpoint>& getCheckpoints() const;
 
-    // Access current state
-    const std::unordered_map<std::string, Node>& getNodes() const;
-    const std::unordered_map<std::string, Edge>& getEdges() const;
-    const std::unordered_map<std::string, std::vector<std::string>>& getOutgoing() const;
-    const std::unordered_map<std::string, std::vector<std::string>>& getIncoming() const;
-
     struct DiffResult {
         // Nodes
         std::vector<Node>                            nodesAdded;
@@ -67,6 +61,19 @@ public:
         std::vector<std::pair<Edge,Edge>>            edgesUpdated;   // {before, after}
       };
     DiffResult diff(std::int64_t t1, std::int64_t t2) const;
+
+    // Access current state
+    const std::unordered_map<std::string, Node>& getNodes() const;
+    const std::unordered_map<std::string, Edge>& getEdges() const;
+    const std::unordered_map<std::string, std::vector<std::string>>& getOutgoing() const;
+    const std::unordered_map<std::string, std::vector<std::string>>& getIncoming() const;
+
+    // Apply a recorded Event to this graph’s state (no logging, no checkpoints)
+    void applyEvent(const Event& event);
+    // Clear all in-memory state (nodes, edges, adjacency) but keep eventLog_ intact
+    void clearStateKeepLog();
+    // Clear both in memory graph and branch-local events
+    void clearGraph();
 
 private:
     // Append-only event history
