@@ -50,9 +50,9 @@ add_executable(test_Graph tests/test_Graph.cpp)
 target_link_libraries(test_Graph PRIVATE chronograph GTest::GTest GTest::Main)
 add_test(NAME test_Graph COMMAND test_Graph)
 
-# add_executable(test_Snapshot tests/test_Snapshot.cpp)
-# target_link_libraries(test_Snapshot PRIVATE chronograph GTest::GTest GTest::Main)
-# add_test(NAME test_Snapshot COMMAND test_Snapshot)
+add_executable(test_Snapshot tests/test_Snapshot.cpp)
+target_link_libraries(test_Snapshot PRIVATE chronograph GTest::GTest GTest::Main)
+add_test(NAME test_Snapshot COMMAND test_Snapshot)
 
 # Example executable
 # add_executable(basic_snapshot examples/basic_snapshot.cpp)

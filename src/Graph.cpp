@@ -116,6 +116,8 @@ void Graph::addEdge(const std::string& id,
     e.type = EventType::ADD_EDGE;
     e.entityId  = id;
     e.payload  = attrs;
+    e.from = from;
+    e.to = to;
     addEvent(e);
     // Store the edge
     edges_[id] = Edge{id, from, to, attrs};
@@ -127,20 +129,22 @@ void Graph::addEdge(const std::string& id,
 }
 
 void Graph::delEdge(const std::string& id, std::int64_t timestamp) {
-    Event e;
-    e.id = generateEventId();
-    e.timestamp = timestamp;
-    e.type = EventType::DEL_EDGE;
-    e.entityId = id;
-    // no payload for deletions
-    addEvent(e);
-
     auto it = edges_.find(id);
     if (it == edges_.end()) return;
 
     // extract endpoints before erasing
     const std::string from = it->second.from;
     const std::string to   = it->second.to;
+
+    Event e;
+    e.id = generateEventId();
+    e.timestamp = timestamp;
+    e.type = EventType::DEL_EDGE;
+    e.entityId = id;
+    e.from = from;
+    e.to = to;
+    // no payload for deletions
+    addEvent(e);
 
     edges_.erase(it);
 
@@ -201,12 +205,7 @@ void Graph::updateEdge(const std::string& id,
     maybeCreateCheckpoint(e);
 }
 
-// Getters
-
-const std::vector<Event>&
-Graph::getEventLog() const {
-    return eventLog_;
-}
+// Graph Getters
 
 const std::unordered_map<std::string, Node>&
 Graph::getNodes() const {

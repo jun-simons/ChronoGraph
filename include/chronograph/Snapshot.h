@@ -12,8 +12,8 @@ public:
     Snapshot(const Graph& graph, std::int64_t timestamp);
 
     // Accessors for nodes and edges at this point in time
-    const std::unordered_map<std::string, Node>& getNodes() const;
-    const std::unordered_map<std::string, Edge>& getEdges() const;
+    const std::unordered_map<std::string, Node>& getNodes() const { return nodes_; }
+    const std::unordered_map<std::string, Edge>& getEdges() const { return edges_; }
 
 private:
     std::unordered_map<std::string, Node> nodes_;
