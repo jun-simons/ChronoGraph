@@ -262,3 +262,78 @@ TEST(RepositoryUpdateOperations, NodeEdgeUpdate) {
     EXPECT_EQ(commits[3].id, c3);
     EXPECT_EQ(commits[4].id, c4);
 }
+
+TEST(RepositoryCommitGraph, ParentsAndChildren) {
+  // 1) Build a repo with:
+  //    – root (implicit)
+  //    – c1: add A               (parent = root)
+  //    – dev → c2: add B         (parent = c1)
+  //    – feat → c3: add C        (parent = c1)
+  //    – main ← dev (fast-forward to c2)
+  //    – main ← feat (three-way merge c4 with parents c2,c3)
+  auto repo = Repository::init("main");
+
+  // c1
+  repo.addNode("A", {{"v","1"}}, 1);
+  auto c1 = repo.commit("add A");
+
+  // c2 on dev
+  repo.branch("dev");
+  repo.checkout("dev");
+  repo.addNode("B", {{"v","2"}}, 2);
+  auto c2 = repo.commit("add B");
+
+  // c3 on feat (branched off main at c1)
+  repo.checkout("main");
+  repo.branch("feat");
+  repo.checkout("feat");
+  repo.addNode("C", {{"v","3"}}, 3);
+  auto c3 = repo.commit("add C");
+
+  // fast-forward main to dev (→ c2)
+  repo.checkout("main");
+  auto r1 = repo.merge("dev", MergePolicy::OURS);
+  EXPECT_EQ(r1.mergeCommitId, c2);
+  EXPECT_TRUE(r1.conflicts.empty());
+
+  // three-way merge feat into main → c4
+  auto r2 = repo.merge("feat", MergePolicy::OURS);
+  // merge-commit must not equal c2 or c3
+  ASSERT_NE(r2.mergeCommitId, c2);
+  ASSERT_NE(r2.mergeCommitId, c3);
+  EXPECT_TRUE(r2.conflicts.empty());
+  auto c4 = r2.mergeCommitId;
+
+  // 2) Pull out the chain in topological order via listCommits
+  auto commits = repo.listCommits("main");
+  ASSERT_EQ(commits.size(), 5u);
+  auto c0 = commits[0].id;  // root
+  EXPECT_EQ(commits[1].id, c1);
+  EXPECT_EQ(commits[2].id, c2);
+  EXPECT_EQ(commits[3].id, c3);
+  EXPECT_EQ(commits[4].id, c4);
+
+  // 3) Get the DAG
+  auto dag = repo.getCommitGraph();
+
+  // 4) Parents
+  EXPECT_TRUE(dag.parents.at(c0).empty());
+  EXPECT_EQ(dag.parents.at(c1), std::vector<std::string>{c0});
+  EXPECT_EQ(dag.parents.at(c2), std::vector<std::string>{c1});
+  EXPECT_EQ(dag.parents.at(c3), std::vector<std::string>{c1});
+
+  auto p4 = dag.parents.at(c4);
+  ASSERT_EQ(p4.size(), 2u);
+  EXPECT_TRUE((p4[0]==c2 && p4[1]==c3) || (p4[0]==c3 && p4[1]==c2));
+
+  // 5) Children
+  EXPECT_EQ(dag.children.at(c0), std::vector<std::string>{c1});
+
+  auto ch1 = dag.children.at(c1);
+  ASSERT_EQ(ch1.size(), 2u);
+  EXPECT_TRUE((ch1[0]==c2 && ch1[1]==c3) || (ch1[0]==c3 && ch1[1]==c2));
+
+  EXPECT_EQ(dag.children.at(c2), std::vector<std::string>{c4});
+  EXPECT_EQ(dag.children.at(c3), std::vector<std::string>{c4});
+  EXPECT_TRUE(dag.children.at(c4).empty());
+}

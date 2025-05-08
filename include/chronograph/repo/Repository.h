@@ -20,6 +20,17 @@ struct Commit {
     std::string message;
 };
 
+// A simple representation of the commit DAG
+// * ONLY used to return the commit DAG in an organized way
+struct CommitGraph {
+  // All commit IDs in the repo
+  std::vector<std::string>                                commitIds;
+  // For each commit ID, its list of parent commit IDs (1 or 2 elements)
+  std::unordered_map<std::string, std::vector<std::string>> parents;
+  // For each commit ID, its list of child commit IDs
+  std::unordered_map<std::string, std::vector<std::string>> children;
+};
+
 // -- Merging and Conflict Types ---
 enum class MergePolicy { OURS, THEIRS, ATTRIBUTE_UNION, INTERACTIVE };
 struct Conflict {
@@ -70,6 +81,9 @@ public:
 
     /// List all commits on the named branch (from root → tip)
     std::vector<Commit> listCommits(const std::string& branchName) const;
+    
+    /// Return a snapshot of the entire commit DAG: nodes + parent/child edges
+    CommitGraph getCommitGraph() const;
 
     /**
      * Merge `branchName` into the current HEAD branch.

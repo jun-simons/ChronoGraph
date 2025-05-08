@@ -205,6 +205,35 @@ std::vector<Commit> Repository::listCommits(const std::string& branchName) const
     return chain;
 }
 
+CommitGraph Repository::getCommitGraph() const {
+    CommitGraph g;
+
+    // 1) Collect all commit IDs
+    g.commitIds.reserve(commits_.size());
+    for (const auto& [cid, cm] : commits_) {
+        g.commitIds.push_back(cid);
+    }
+
+    // 2) Build parents map (copy directly from each Commit)
+    for (const auto& [cid, cm] : commits_) {
+        g.parents[cid] = cm.parents;
+    }
+
+    // 3) Build children map by inverting parents
+    //    Initialize empty vectors for every commit
+    for (const auto& cid : g.commitIds) {
+        g.children[cid];  // make sure key exists
+    }
+    //    For each commit, register it as a child of each parent
+    for (const auto& [cid, cm] : commits_) {
+        for (const auto& pid : cm.parents) {
+            g.children[pid].push_back(cid);
+        }
+    }
+
+    return g;
+}
+
 MergeResult Repository::merge(const std::string& branchName,
     MergePolicy policy)
 {
