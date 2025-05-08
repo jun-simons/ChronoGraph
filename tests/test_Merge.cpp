@@ -1,4 +1,4 @@
-// tests/test_RepositoryMerge.cpp
+// tests/test_Merge.cpp
 
 #include "chronograph/Repository.h"
 #include "chronograph/Snapshot.h"
@@ -10,7 +10,7 @@
 
 using namespace chronograph;
 
-TEST(RepositoryMerge, FastForward) {
+TEST(Merge, FastForward) {
     // Setup: on main add A then branch dev and add B
     auto repo = Repository::init("main");
     repo.addNode("A", {{"val","1"}}, /*ts=*/1);
@@ -45,7 +45,7 @@ TEST(RepositoryMerge, FastForward) {
     }
 }
 
-TEST(RepositoryMerge, ThreeWayNoConflict) {
+TEST(Merge, ThreeWayNoConflict) {
     // Setup: add A on main, branch dev adds B, then branch feature adds C
     auto repo = Repository::init("main");
     repo.addNode("A", {{"val","1"}}, /*ts=*/1);
@@ -93,5 +93,64 @@ TEST(RepositoryMerge, ThreeWayNoConflict) {
     {
         Snapshot s(repo.graph(), std::numeric_limits<int64_t>::max());
         EXPECT_EQ(s.getNodes().size(), 3u);
+    }
+}
+
+TEST(RepositoryMergeCommitParents, OnlyThreeWayGetsTwoParents) {
+    auto repo = Repository::init("main");
+
+    // Base: add A on main
+    repo.addNode("A", {{"v","1"}}, /*ts=*/1);
+    auto c1 = repo.commit("add A");
+
+    // dev branch off main, adds B
+    repo.branch("dev");
+    repo.checkout("dev");
+    repo.addNode("B", {{"v","2"}}, /*ts=*/2);
+    auto c2 = repo.commit("add B");
+
+    // feature branch off main (still at c1), adds C
+    repo.checkout("main");
+    repo.branch("feat");
+    repo.checkout("feat");
+    repo.addNode("C", {{"v","3"}}, /*ts=*/3);
+    auto c3 = repo.commit("add C");
+
+    // Merge dev into main -> fast-forward to c2 (no merge commit)
+    repo.checkout("main");
+    auto r1 = repo.merge("dev", MergePolicy::OURS);
+    EXPECT_EQ(r1.mergeCommitId, c2);
+    EXPECT_TRUE(r1.conflicts.empty());
+    {
+      // Should still see A,B only
+      auto nodes = repo.graph().getNodes();
+      EXPECT_EQ(nodes.size(), 2u);
+      EXPECT_TRUE(nodes.count("A"));
+      EXPECT_TRUE(nodes.count("B"));
+    }
+
+    // Merge feat into main -> true three-way; expect a new merge commit
+    auto r2 = repo.merge("feat", MergePolicy::OURS);
+    EXPECT_NE(r2.mergeCommitId, c3);
+    EXPECT_NE(r2.mergeCommitId, c2);
+    EXPECT_TRUE(r2.conflicts.empty());
+
+    // Now inspect the final commit (tip of main)
+    auto commits = repo.listCommits("main");
+    const Commit& mergeC = commits.back();
+    ASSERT_EQ(mergeC.parents.size(), 2u);
+    // parents must be c2 and c3 (in any order)
+    EXPECT_TRUE(
+      (mergeC.parents[0] == c2 && mergeC.parents[1] == c3) ||
+      (mergeC.parents[0] == c3 && mergeC.parents[1] == c2)
+    );
+
+    // And the graph has A,B,C
+    {
+      auto nodes = repo.graph().getNodes();
+      EXPECT_EQ(nodes.size(), 3u);
+      EXPECT_TRUE(nodes.count("A"));
+      EXPECT_TRUE(nodes.count("B"));
+      EXPECT_TRUE(nodes.count("C"));
     }
 }

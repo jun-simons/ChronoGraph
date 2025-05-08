@@ -10,6 +10,7 @@
 
 namespace chronograph {
 
+// --- Commit Types ---
 /// Represents single Commit in the repository
 // * these form a DAG of commits in the Repository
 // * events for every commit are stored in a vector
@@ -20,7 +21,19 @@ struct Commit {
     std::string message;
 };
 
-/// Simple git-style repository for a graph
+// -- Merging and Conflict Types ---
+enum class MergePolicy { OURS, THEIRS, ATTRIBUTE_UNION, INTERACTIVE };
+struct Conflict {
+  enum Kind { ADD_ADD, DEL_UPDATE, UPDATE_UPDATE } kind;
+  Event ours, theirs;
+};
+struct MergeResult {
+    std::string         mergeCommitId;
+    std::vector<Conflict> conflicts;  // empty if no conflicts or non-interactive
+  };
+
+
+// Git-style repository for a graph
 class Repository {
 public:
     /// Initialize an empty repo with a single root commit on `rootBranch`
@@ -58,6 +71,14 @@ public:
 
     /// List all commits on the named branch (from root → tip)
     std::vector<Commit> listCommits(const std::string& branchName) const;
+
+    /**
+   * Merge `branchName` into the current HEAD branch.
+   * - policy: automatic resolution strategy
+   * - in INTERACTIVE mode, conflicts are returned for manual resolution
+   */
+    MergeResult merge(const std::string& branchName,
+                    MergePolicy policy = MergePolicy::OURS);
 
     /// Access the current working‐tree graph
     const Graph& graph() const { return workingGraph_; }

@@ -63,6 +63,10 @@ add_executable(test_Repository tests/test_Repository.cpp)
 target_link_libraries(test_Repository PRIVATE chronograph GTest::GTest GTest::Main)
 add_test(NAME test_Repository COMMAND test_Repository)
 
+add_executable(test_Merge tests/test_Merge.cpp)
+target_link_libraries(test_Merge PRIVATE chronograph GTest::GTest GTest::Main)
+add_test(NAME test_Merge COMMAND test_Merge)
+
 # Example executable
 # add_executable(basic_snapshot examples/basic_snapshot.cpp)
 # target_link_libraries(basic_snapshot PRIVATE chronograph)

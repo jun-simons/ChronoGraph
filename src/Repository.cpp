@@ -1,4 +1,6 @@
 #include "chronograph/Repository.h"
+#include "chronograph/Snapshot.h"
+#include <algorithm>
 #include <random>
 #include <sstream>
 #include <unordered_set>
@@ -201,6 +203,103 @@ std::vector<Commit> Repository::listCommits(const std::string& branchName) const
         chain.push_back(commits_.at(cid));
     }
     return chain;
+}
+
+MergeResult Repository::merge(const std::string& branchName,
+    MergePolicy policy)
+{
+    // 1) Locate the branch tip
+    auto bit = branches_.find(branchName);
+    if (bit == branches_.end()) {
+        throw std::runtime_error("Branch '" + branchName + "' does not exist");
+    }
+    const std::string A = HEAD_commitId_;
+    const std::string B = bit->second;
+
+    // 2) Trivial case: merging into itself
+    if (A == B) {
+        return MergeResult{ A, {} };
+    }
+
+    // 3) Build ancestor chains and sets
+    std::vector<std::string> ancA, ancB;
+    std::unordered_set<std::string> setA, setB;
+    buildAncestors(A, ancA, setA);
+    buildAncestors(B, ancB, setB);
+
+    // 4) IF A is ancestor of B: simply fast forward
+    if (setB.count(A)) {
+        // compute linear path B->A (exclusive of A), using first‐parent pointers
+        std::vector<std::string> pathB;
+        for (std::string cid = B; cid != A; cid = commits_[cid].parents[0]) {
+            pathB.push_back(cid);
+        }
+        std::reverse(pathB.begin(), pathB.end());
+
+        // apply each commit’s events in order
+        for (auto& cid : pathB) {
+            for (auto& e : commits_.at(cid).events) {
+                workingGraph_.addEvent(e);
+                workingGraph_.applyEvent(e);
+            }
+        }
+
+        // advance main branch pointer
+        branches_[HEAD_] = B;
+        HEAD_commitId_ = B;
+        lastCommittedEventIndex_ = workingGraph_.getEventLog().size();
+        return MergeResult{ B, {} };
+    }
+
+    // 5) IF True three‐way merge
+    // 5a) Find the common ancestor (CA), walk back from B until we hit something in ancA
+    std::string CA;
+    for (auto it = ancB.rbegin(); it != ancB.rend(); ++it) {
+        if (setA.count(*it)) {
+            CA = *it;
+            break;
+        }
+    }
+    if (CA.empty()) {
+        throw std::runtime_error("No common ancestor found!");
+    }
+
+    // 5b) Compute B’s delta since CA: linear path from CA→B
+    std::vector<std::string> pathB;
+    for (std::string cid = B; cid != CA; cid = commits_[cid].parents[0]) {
+        pathB.push_back(cid);
+    }
+    std::reverse(pathB.begin(), pathB.end());
+
+    // 5c) Apply B’s delta onto the current working‐tree (which is at A)
+    std::vector<Conflict> conflicts;    
+    std::vector<Event>   mergedEvents;
+    for (auto& cid : pathB) {
+        for (auto& e : commits_.at(cid).events) {
+            //TODO: detailed conflict population
+            bool conflict = false;
+            if (conflict && policy == MergePolicy::OURS) {
+            // skip applying
+            } else {
+            // either no conflict, or THEIRS/UNION
+                workingGraph_.addEvent(e);
+                workingGraph_.applyEvent(e);
+                mergedEvents.push_back(e);
+            }
+        }
+    }
+
+    // 5d) Create the merge commit with two parents (A and B)
+    std::string mergeId = generateCommitId();
+    Commit m{ mergeId, { A, B }, std::move(mergedEvents) };
+    commits_.emplace(mergeId, std::move(m));
+
+    // advance HEAD on this branch
+    branches_[HEAD_] = mergeId;
+    HEAD_commitId_  = mergeId;
+    lastCommittedEventIndex_ = workingGraph_.getEventLog().size();
+
+    return MergeResult{ mergeId, std::move(conflicts) };
 }
 
 // ——— Helpers ———
