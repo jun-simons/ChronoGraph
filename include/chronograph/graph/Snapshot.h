@@ -6,8 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Node.h"
-#include "Edge.h"
+#include  <chronograph/graph/Node.h>
+#include  <chronograph/graph/Edge.h>
 
 namespace chronograph {
 

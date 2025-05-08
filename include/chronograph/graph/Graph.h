@@ -1,10 +1,10 @@
 // include/chronograph/Graph.h
 #pragma once
 
-#include "Event.h"
-#include "Node.h"
-#include "Edge.h"
-#include "Snapshot.h"
+#include <chronograph/graph/Event.h>
+#include <chronograph/graph/Node.h>
+#include <chronograph/graph/Edge.h>
+#include <chronograph/graph/Snapshot.h>
 #include <vector>
 #include <unordered_map>
 #include <map>

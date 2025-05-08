@@ -1,9 +1,9 @@
 // src/Graph.cpp
-#include "chronograph/Graph.h"
-#include "chronograph/Event.h"
-#include "chronograph/Node.h"
-#include "chronograph/Edge.h"
-#include "chronograph/Snapshot.h"
+#include <chronograph/graph/Graph.h>
+#include <chronograph/graph/Event.h>
+#include <chronograph/graph/Node.h>
+#include <chronograph/graph/Edge.h>
+#include <chronograph/graph/Snapshot.h>
 
 #include <random>
 #include <sstream>

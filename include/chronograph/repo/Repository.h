@@ -1,8 +1,7 @@
 #pragma once
 
-#include "Graph.h"
-#include "Event.h"
-
+#include <chronograph/graph/Graph.h>
+#include <chronograph/graph/Event.h> 
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -73,10 +72,10 @@ public:
     std::vector<Commit> listCommits(const std::string& branchName) const;
 
     /**
-   * Merge `branchName` into the current HEAD branch.
-   * - policy: automatic resolution strategy
-   * - in INTERACTIVE mode, conflicts are returned for manual resolution
-   */
+     * Merge `branchName` into the current HEAD branch.
+     * - policy: automatic resolution strategy
+     * - in INTERACTIVE mode, conflicts are returned for manual resolution
+     */
     MergeResult merge(const std::string& branchName,
                     MergePolicy policy = MergePolicy::OURS);
 

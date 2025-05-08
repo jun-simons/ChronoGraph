@@ -1,6 +1,6 @@
 // tests/test_Graph.cpp
 
-#include "chronograph/Graph.h"
+#include <chronograph/graph/Graph.h>
 #include <gtest/gtest.h>
 #include <map>
 #include <string>

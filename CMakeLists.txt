@@ -6,21 +6,33 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Include public headers
-include_directories(${PROJECT_SOURCE_DIR}/include)
+add_subdirectory(src/chronograph/graph)
+add_subdirectory(src/chronograph/repo)
+# add_subdirectory(tests)
+# add_subdirectory(src/chronograph/common)
 
-# Core library target
-add_library(chronograph
-    src/Event.cpp
-    src/Node.cpp
-    src/Edge.cpp
-    src/Graph.cpp
-    src/Snapshot.cpp
-    src/Repository.cpp
+# Include public headers
+# include_directories(${PROJECT_SOURCE_DIR}/include)
+
+add_library(chronograph INTERFACE)
+target_link_libraries(chronograph
+  INTERFACE
+    chronograph-graph
+    chronograph-repo
 )
 
+# Core library target
+# add_library(chronograph
+#     src/Event.cpp
+#     src/Node.cpp
+#     src/Edge.cpp
+#     src/Graph.cpp
+#     src/Snapshot.cpp
+#     src/Repository.cpp
+# )
+
 # Specify include directories for consumers
-target_include_directories(chronograph PUBLIC
+target_include_directories(chronograph INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
@@ -43,9 +55,6 @@ find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 
 # Unit test targets
-# add_executable(test_Event tests/test_Event.cpp)
-# target_link_libraries(test_Event PRIVATE chronograph GTest::GTest GTest::Main)
-# add_test(NAME test_Event COMMAND test_Event)
 
 add_executable(test_Graph tests/test_Graph.cpp)
 target_link_libraries(test_Graph PRIVATE chronograph GTest::GTest GTest::Main)
@@ -66,10 +75,6 @@ add_test(NAME test_Repository COMMAND test_Repository)
 add_executable(test_Merge tests/test_Merge.cpp)
 target_link_libraries(test_Merge PRIVATE chronograph GTest::GTest GTest::Main)
 add_test(NAME test_Merge COMMAND test_Merge)
-
-# Example executable
-# add_executable(basic_snapshot examples/basic_snapshot.cpp)
-# target_link_libraries(basic_snapshot PRIVATE chronograph)
 
 # Python bindings (for future addition)
 # add_subdirectory(python)

@@ -1,5 +1,5 @@
-#include "chronograph/Repository.h"
-#include "chronograph/Snapshot.h"
+#include <chronograph/repo/Repository.h>
+#include <chronograph/graph/Snapshot.h>
 #include <algorithm>
 #include <random>
 #include <sstream>

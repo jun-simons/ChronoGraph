@@ -1,7 +1,7 @@
 // tests/test_Snapshot.cpp
 
-#include "chronograph/Graph.h"
-#include "chronograph/Snapshot.h"
+#include <chronograph/graph/Graph.h>
+#include <chronograph/graph/Snapshot.h>
 #include <gtest/gtest.h>
 #include <map>
 #include <string>
