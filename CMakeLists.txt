@@ -8,6 +8,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(src/chronograph/graph)
 add_subdirectory(src/chronograph/repo)
+add_subdirectory(src/chronograph/repo/utils)
+add_subdirectory(examples)
 # add_subdirectory(tests)
 # add_subdirectory(src/chronograph/common)
 
@@ -19,6 +21,7 @@ target_link_libraries(chronograph
   INTERFACE
     chronograph-graph
     chronograph-repo
+    chronograph-repo-utils
 )
 
 # Core library target
