@@ -10,8 +10,6 @@ Chronograph can be used for social-network evolution, financial audit trails, co
 
 ## Features
 
-## Features
-
 - **Event Sourcing**  
   Append-only history of node/edge additions, deletions, and updates with timestamps.
 
@@ -60,7 +58,6 @@ ctest --output-on-failure -V
 
 ---
 
-```markdown
 ## Basic Usage: Graph
 
 ```cpp
@@ -79,7 +76,6 @@ auto nodes = snap.getNodes();
 
 ---
 
-```markdown
 ## Basic Usage: Reachability
 
 ```cpp
