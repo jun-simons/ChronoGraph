@@ -16,6 +16,13 @@ target_include_directories(chronograph-graph
   ${CMAKE_SOURCE_DIR}/include
 )
 
+add_subdirectory(algorithms)
+# Link the algorithms library so Graph consumers see it transitively
+target_link_libraries(chronograph-graph
+  PUBLIC
+    chronograph-graph-algo
+)
+
 # If Graph.cpp depends on other internal modules (e.g. a common utils lib),
 # link them here. For now, nothing extra:
 # target_link_libraries(chronograph-graph PRIVATE chronograph-common)

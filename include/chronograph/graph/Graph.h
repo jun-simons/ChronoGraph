@@ -11,6 +11,8 @@
 
 namespace chronograph {
 
+/// Contains the core functionality for Graphs in ChronoGraph
+// * Handles nodes, edges, and events
 class Graph {
 public:
     Graph() = default;

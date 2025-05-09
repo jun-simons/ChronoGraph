@@ -1,10 +1,8 @@
 # ChronoGraph
 
-**ChronoGraph** is a C++(>17) library for building and querying **temporal**, **versioned** graphs (“Git for graphs”).  You record every change as an append-only event log, and can:
+*Github, but for graphs!*
 
-- **Time-travel** to any past state via fast snapshot replay  
-- **Branch** your graph history and **merge** divergent edits with three-way merge and conflict resolution  
-- **Diff** two versions to see what nodes or edges were added, removed, or updated  
+A temporal, versioned graph library in C++17 with Git-like branching & merging, time-travel snapshots, diffs, and graph algorithms.
 
 Chronograph can be used for social-network evolution, financial audit trails, collaborative knowledge-graph editing, and more.
 
@@ -12,29 +10,38 @@ Chronograph can be used for social-network evolution, financial audit trails, co
 
 ## Features
 
-- **Event model**: immutable `Event { id, timestamp, type, entityId, payload }`  
-- **Core mutations**: `addNode`, `delNode`, `addEdge`, `delEdge`, `updateNode`, `updateEdge`  
-- **In-memory state**: O(1) lookup of nodes/edges plus adjacency lists for fast traversal  
-- **Snapshot**: reconstruct your graph at any timestamp by replaying events  
-- *(Phase 2+)* `diff(t₁, t₂)`, commit/branch model, three-way merges with configurable conflict policies  
-- *(Future)* will implement Python bindings via Pybind11 in `python/`
+## Features
 
----
+- **Event Sourcing**  
+  Append-only history of node/edge additions, deletions, and updates with timestamps.
+
+- **Snapshots & Time-Travel**  
+  View the graph at a certain point in time, or *replay* the graph changes between two points in time.
+
+- **Diffing**  
+  Compute added/removed/updated nodes and edges between two points in time, or between two branches
+
+- **Repository & Commits**  
+  ChronoGraph provides a Respoitory object at the top level. Changes to the graph are committed and stored as `Commit` objects.
+
+- **Branching & Merging**  
+  Graph repositories support branches, fast-forward and three-way merges (with pluggable merge policies).
+
+- **Graph Algorithms**  
+  Reachability, shortest-path stubs, and more, via a dedicated `graph/algorithms/` submodule.
 
 ## Prerequisites
 
-- A C++ compiler with **C++17** support (e.g. GCC 7+, Clang 5+, MSVC 2017+)  
-- **CMake 3.14** or later  
-- **Git** (to clone the repo)  
-- **Internet access** (to fetch GoogleTest via CMake’s FetchContent)  
-
----
+You need:
+- *CMake 3.14* or later
+- A C++17-capable compiler (e.g. GCC 7+, Clang 5+)
+- GoogleTest (or internet access: by default, GTest is fetched by CMake's FetchContent)
 
 ## Getting Started
 
 ```bash
 # 1) Clone the repo
-git clone https://github.com/yourusername/ChronoGraph.git
+git clone https://github.com/jun-simons/ChronoGraph.git
 cd ChronoGraph
 
 # 2) Create a build directory
@@ -44,50 +51,74 @@ mkdir build && cd build
 cmake ..
 make -j$(nproc)            # or `cmake --build . -- -j4` on some platforms
 
-# 4) Run the unit tests
-ctest --output-on-failure
+# 4) (Optional) Run the unit tests
+ctest --output-on-failure -V
 
-# 5) (Optional) Try the example
-./examples/basic_snapshot
+# 5) (Optional) Run the example code
+./examples/example_repo
 ```
 
-If everything succeeds, you’ll have:
+---
 
-- libchronograph.a (the core static library)
-- test_Graph (unit tests)
-- examples/basic_snapshot (a minimal demo CLI)
+```markdown
+## Basic Usage: Graph
 
-## Usage
-
-You can integrate Chronograph in CMake like:
-```cmake
-find_package(chronograph REQUIRED PATHS /path/to/ChronoGraph/build)
-add_executable(my_app src/main.cpp)
-target_link_libraries(my_app PRIVATE chronograph::chronograph)
-```
-
-Example code:
 ```cpp
-#include <chronograph/Graph.h>
+#include <chronograph/graph/Graph.h>
+#include <chronograph/graph/Snapshot.h>
+
 using namespace chronograph;
 
-int main() {
-    Graph g;
-    int64_t ts = 1618033988;
+Graph g;
+g.addNode("n1", {{"name","Alice"}}, timestamp);
+g.addEdge("e1","n1","n2",{},timestamp);
 
-    g.addNode("user42", {{"name","Dave"}}, ts);
-    g.addNode("user73", {{"name","Eve"}}, ts + 1);
-    g.addEdge("edge1", "user42", "user73",
-              {{"since","2025-05-06"}}, ts + 2);
-
-    for (auto& [id, node] : g.getNodes()) {
-        std::cout << "Node " << id
-                  << " has name="
-                  << node.attributes.at("name")
-                  << "\n";
-    }
-}
+Snapshot snap(g, someTimestamp);
+auto nodes = snap.getNodes();
 ```
+
+---
+
+```markdown
+## Basic Usage: Reachability
+
+```cpp
+#include <chronograph/graph/algorithms/Paths.h>
+
+using chronograph::graph::algorithms::isReachable;
+
+bool canReach = isReachable(g, "A", "B");
+```
+
+---
+
+## Basic Usage: Repository (Commits & Branches)
+
+```cpp
+#include <chronograph/repo/Repository.h>
+
+auto repo = Repository::init("main");
+repo.addNode("A", {...}, ts);
+auto c1 = repo.commit("add A");
+
+repo.branch("dev");
+repo.checkout("dev");
+repo.addNode("B", {...}, ts);
+auto c2 = repo.commit("add B");
+
+repo.checkout("main");
+auto result = repo.merge("dev", MergePolicy::OURS);
+```
+
+## Documentation
+
+For in-depth design and API details, see the `docs/` folder.
+
+## License
+
+MIT © Jun Simons
+
+
 
 This project is in early development 
 (www.junsimons.com)
