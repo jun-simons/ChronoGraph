@@ -58,7 +58,7 @@ ctest --output-on-failure -V
 
 ---
 
-## Basic Usage: Graph
+### Basic Usage: Graph
 
 ```cpp
 #include <chronograph/graph/Graph.h>
@@ -76,7 +76,7 @@ auto nodes = snap.getNodes();
 
 ---
 
-## Basic Usage: Reachability
+### Basic Usage: Reachability
 
 ```cpp
 #include <chronograph/graph/algorithms/Paths.h>
@@ -88,7 +88,7 @@ bool canReach = isReachable(g, "A", "B");
 
 ---
 
-## Basic Usage: Repository (Commits & Branches)
+### Basic Usage: Repository (Commits & Branches)
 
 ```cpp
 #include <chronograph/repo/Repository.h>
