@@ -83,5 +83,9 @@ add_executable(test_Reachability tests/test_Reachability.cpp)
 target_link_libraries(test_Reachability PRIVATE chronograph GTest::GTest GTest::Main)
 add_test(NAME test_Reachability COMMAND test_Reachability)
 
+add_executable(test_Connectivity tests/test_Connectivity.cpp)
+target_link_libraries(test_Connectivity PRIVATE chronograph GTest::GTest GTest::Main)
+add_test(NAME test_Connectivity COMMAND test_Connectivity)
+
 # Python bindings (for future addition)
 # add_subdirectory(python)

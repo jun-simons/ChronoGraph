@@ -53,14 +53,14 @@ public:
 
     struct DiffResult {
         // Nodes
-        std::vector<Node>                            nodesAdded;
-        std::vector<std::string>                     nodesRemoved;
-        std::vector<std::pair<Node,Node>>            nodesUpdated;   // {before, after}
+        std::vector<Node> nodesAdded;
+        std::vector<std::string> nodesRemoved;
+        std::vector<std::pair<Node,Node>> nodesUpdated;   // {before, after}
   
         // Edges
-        std::vector<Edge>                            edgesAdded;
-        std::vector<std::string>                     edgesRemoved;
-        std::vector<std::pair<Edge,Edge>>            edgesUpdated;   // {before, after}
+        std::vector<Edge> edgesAdded;
+        std::vector<std::string> edgesRemoved;
+        std::vector<std::pair<Edge,Edge>> edgesUpdated;   // {before, after}
       };
     DiffResult diff(std::int64_t t1, std::int64_t t2) const;
 
