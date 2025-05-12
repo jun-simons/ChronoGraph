@@ -68,6 +68,7 @@ using namespace chronograph;
 
 Graph g;
 g.addNode("n1", {{"name","Alice"}}, timestamp);
+g.addNode("n2", {{"name","Bob"}}, timestamp);
 g.addEdge("e1","n1","n2",{},timestamp);
 
 Snapshot snap(g, someTimestamp);
@@ -113,7 +114,6 @@ For in-depth design and API details, see the `docs/` folder.
 ## License
 
 MIT © Jun Simons
-
 
 
 This project is in early development 

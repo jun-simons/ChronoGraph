@@ -79,9 +79,9 @@ add_executable(test_Merge tests/test_Merge.cpp)
 target_link_libraries(test_Merge PRIVATE chronograph GTest::GTest GTest::Main)
 add_test(NAME test_Merge COMMAND test_Merge)
 
-add_executable(test_Algorithms tests/test_Algorithms.cpp)
-target_link_libraries(test_Algorithms PRIVATE chronograph GTest::GTest GTest::Main)
-add_test(NAME test_Algorithms COMMAND test_Algorithms)
+add_executable(test_Reachability tests/test_Reachability.cpp)
+target_link_libraries(test_Reachability PRIVATE chronograph GTest::GTest GTest::Main)
+add_test(NAME test_Reachability COMMAND test_Reachability)
 
 # Python bindings (for future addition)
 # add_subdirectory(python)
