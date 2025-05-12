@@ -133,6 +133,50 @@ std::vector<std::string> shortestPath(const Graph& g,
     return path;
 }
 
+bool isReachableAt(const Graph& g,
+    const std::string& start,
+    const std::string& target,
+    std::int64_t timestamp)
+{
+    // Build snapshot at T
+    Snapshot snap(g, timestamp);
+
+    // Use the same BFS logic, but on the snapshot
+    const auto& outEdges = snap.getOutgoing();
+    const auto& edges    = snap.getEdges();
+
+    if (start == target) {
+        return outEdges.find(start) != outEdges.end();
+    }
+    auto itStart = outEdges.find(start);
+    if (itStart == outEdges.end()) {
+        return false;
+    }
+
+    std::unordered_set<std::string> visited;
+    std::queue<std::string> q;
+    visited.insert(start);
+    q.push(start);
+
+    while (!q.empty()) {
+        const auto u = q.front(); q.pop();
+        auto oit = outEdges.find(u);
+        if (oit == outEdges.end()) continue;
+        for (const auto& eid : oit->second) {
+            auto eit = edges.find(eid);
+            if (eit == edges.end()) continue;
+            const auto& v = eit->second.to;
+            if (v == target) return true;
+            if (!visited.count(v)) {
+                visited.insert(v);
+                q.push(v);
+            }
+        }
+    }
+    return false;
+}
+
+
 
 }  // namespace algorithms
 }  // namespace graph

@@ -7,6 +7,7 @@
 using chronograph::Graph;
 using chronograph::graph::algorithms::isReachable;
 using chronograph::graph::algorithms::shortestPath;
+using chronograph::graph::algorithms::isReachableAt;
 
 static int64_t ts = 1;
 
@@ -157,4 +158,36 @@ TEST(ShortestPath_OnGraph_Nonexistent, MissingNodes) {
     EXPECT_TRUE(path.empty());
     path = shortestPath(g, "X", "Y");
     EXPECT_TRUE(path.empty());
+}
+
+TEST(ReachabilityAtT_OnGraph, TimelineScenarios) {
+    // Test isReachableAt with 4 even timestamps
+    Graph g;
+    // t=1: create three nodes A,B,C
+    g.addNode("A", {}, 1);
+    g.addNode("B", {}, 1);
+    g.addNode("C", {}, 1);
+    // t=2: add edge A→B
+    g.addEdge("e1", "A", "B", {}, 2);
+    // t=3: add edge B→C
+    g.addEdge("e2", "B", "C", {}, 3);
+    // t=4: delete edge e2
+    g.delEdge("e2", 4);
+
+    // before any edges: no reachability
+    EXPECT_FALSE(isReachableAt(g, "A", "B", 1));
+    EXPECT_FALSE(isReachableAt(g, "A", "C", 1));
+
+    // after A->B only
+    EXPECT_TRUE (isReachableAt(g, "A", "B", 2));
+    EXPECT_FALSE(isReachableAt(g, "A", "C", 2));
+
+    // after B->C: A->C via A->B->C
+    EXPECT_TRUE (isReachableAt(g, "A", "C", 3));
+    EXPECT_TRUE (isReachableAt(g, "B", "C", 3));
+
+    // immediately after deleting B->C: A->C no longer reachable
+    EXPECT_FALSE(isReachableAt(g, "A", "C", 4));
+    // but A->B still works
+    EXPECT_TRUE (isReachableAt(g, "A", "B", 4));
 }

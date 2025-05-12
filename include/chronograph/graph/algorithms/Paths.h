@@ -27,6 +27,15 @@ std::vector<std::string> shortestPath(const Graph& g,
     const std::string& start,
     const std::string& target);
 
+/**
+* Returns true if `target` is reachable from `start` in `g` *as of* `timestamp`.
+* Internally takes a Snapshot at time T and runs reachability on that snapshot.
+*/
+bool isReachableAt(const Graph& g,
+    const std::string& start,
+    const std::string& target,
+    std::int64_t timestamp);
+
 }  // namespace algorithms
 }  // namespace graph
 }  // namespace chronograph
