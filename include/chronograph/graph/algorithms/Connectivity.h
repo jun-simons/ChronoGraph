@@ -15,6 +15,13 @@ namespace algorithms {
 std::vector<std::vector<std::string>>
 weaklyConnectedComponents(const Graph& g);
 
+/**
+ * Compute the strongly‐connected components of a directed graph.
+ * Returns a vector of components, each a list of node‐IDs.
+ */
+std::vector<std::vector<std::string>>
+stronglyConnectedComponents(const Graph& g);
+
 }  // namespace algorithms
 }  // namespace graph
 }  // namespace chronograph
