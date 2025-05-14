@@ -81,7 +81,7 @@ Snapshot::Snapshot(const Graph& graph, std::int64_t timestamp) {
         break;
 
       case EventType::ADD_EDGE:
-        edges_[e.entityId] = Edge{e.entityId, e.from, e.to, e.payload};
+        edges_[e.entityId] = Edge{e.entityId, e.from, e.to, e.payload, e.timestamp};
         outgoing_[e.from].push_back(e.entityId);
         incoming_[e.to].push_back(e.entityId);
         break;

@@ -36,6 +36,14 @@ bool isReachableAt(const Graph& g,
     const std::string& target,
     std::int64_t timestamp);
 
+/**
+ * Returns true if `target` is reachable from `start` in the given graph,
+ * considering only paths whose edge‐creation timestamps never decrease.
+ */
+bool isTimeRespectingReachable(const Graph& g,
+    const std::string& start,
+    const std::string& target);
+
 }  // namespace algorithms
 }  // namespace graph
 }  // namespace chronograph

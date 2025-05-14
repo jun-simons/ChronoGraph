@@ -8,6 +8,7 @@ using chronograph::Graph;
 using chronograph::graph::algorithms::isReachable;
 using chronograph::graph::algorithms::shortestPath;
 using chronograph::graph::algorithms::isReachableAt;
+using chronograph::graph::algorithms::isTimeRespectingReachable;
 
 static int64_t ts = 1;
 
@@ -190,4 +191,60 @@ TEST(ReachabilityAtT_OnGraph, TimelineScenarios) {
     EXPECT_FALSE(isReachableAt(g, "A", "C", 4));
     // but A->B still works
     EXPECT_TRUE (isReachableAt(g, "A", "B", 4));
+}
+
+TEST(TimeRespectingReachability_IncreasingTimestamps, MultiHopSuccess) {
+    Graph g;
+    // nodes
+    g.addNode("A", {}, 1);
+    g.addNode("B", {}, 1);
+    g.addNode("C", {}, 1);
+    // edges with non-decreasing times
+    g.addEdge("e1", "A", "B", {}, 5);   // A→B at t=5
+    g.addEdge("e2", "B", "C", {}, 10);  // B→C at t=10
+
+    // should be reachable via A→B→C
+    EXPECT_TRUE(isTimeRespectingReachable(g, "A", "C"));
+    // direct neighbor always OK
+    EXPECT_TRUE(isTimeRespectingReachable(g, "A", "B"));
+}
+
+TEST(TimeRespectingReachability_DecreasingTimestamps, MultiHopFailure) {
+    Graph g;
+    g.addNode("A", {}, 1);
+    g.addNode("B", {}, 1);
+    g.addNode("C", {}, 1);
+    // B->C created first, then A→B
+    g.addEdge("e1", "B", "C", {}, 5);   // B->C at t=5
+    g.addEdge("e2", "A", "B", {}, 10);  // A->B at t=10
+
+    // from A reach B at t=10, but B→C is t=5<10, so cannot continue
+    EXPECT_FALSE(isTimeRespectingReachable(g, "A", "C"));
+    // A->B itself is OK
+    EXPECT_TRUE(isTimeRespectingReachable(g, "A", "B"));
+}
+
+TEST(TimeRespectingReachability_SameTimestamp, EqualTimes) {
+    Graph g;
+    g.addNode("X", {}, 1);
+    g.addNode("Y", {}, 1);
+    // both edges at same timestamp
+    g.addEdge("e1", "X", "Y", {}, 7);
+    g.addEdge("e2", "Y", "Z", {}, 7);
+    g.addNode("Z", {}, 1);
+
+    // Y->Z added before querying, but createdTimestamp == lastTs => allowed
+    EXPECT_TRUE(isTimeRespectingReachable(g, "X", "Z"));
+}
+
+TEST(TimeRespectingReachability_SelfAndMissing, EdgeCases) {
+    Graph g;
+    g.addNode("N", {}, 1);
+
+    // self is always reachable if node exists
+    EXPECT_TRUE(isTimeRespectingReachable(g, "N", "N"));
+    // missing nodes
+    EXPECT_FALSE(isTimeRespectingReachable(g, "N", "M"));
+    EXPECT_FALSE(isTimeRespectingReachable(g, "M", "N"));
+    EXPECT_FALSE(isTimeRespectingReachable(g, "U", "V"));
 }

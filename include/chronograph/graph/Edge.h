@@ -11,6 +11,7 @@ struct Edge {
     std::string from;  // source node ID
     std::string to;    // target node ID
     std::map<std::string, std::string> attributes;
+    std::int64_t createdTimestamp;
 };
 
 }  // namespace chronograph

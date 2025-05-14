@@ -176,6 +176,66 @@ bool isReachableAt(const Graph& g,
     return false;
 }
 
+bool isTimeRespectingReachable(const Graph& g,
+    const std::string& start,
+    const std::string& target)
+{
+    // Quick checks
+    const auto& nodes = g.getNodes();
+    if (!nodes.count(start) || !nodes.count(target)) {
+        return false;
+    }
+    if (start == target) {
+        return true;
+    }
+
+    // Adjacency: node -> list of edge-IDs
+    const auto& outEdges = g.getOutgoing();
+    // Edge storage: edge-ID -> Edge
+    const auto& edges = g.getEdges();
+
+    // Keep track of the smallest timestamp at reached each node
+    std::unordered_map<std::string, std::int64_t> bestTime;
+    std::queue<std::pair<std::string, std::int64_t>> q;
+
+    // Initialize
+    bestTime[start] = std::numeric_limits<std::int64_t>::min();
+    q.push({start, bestTime[start]});
+
+    while (!q.empty()) {
+        auto [u, lastTs] = q.front();
+        q.pop();
+
+        auto oit = outEdges.find(u);
+        if (oit == outEdges.end()) continue;
+
+        for (auto const& eid : oit->second) {
+            auto eit = edges.find(eid);
+            if (eit == edges.end()) continue;
+            const auto& edge = eit->second;
+            std::int64_t ts  = edge.createdTimestamp;  // creation time of this edge
+
+            // skip "back in time edges"
+            // only allows nondecreasing paths
+            if (ts < lastTs) continue;
+
+            const auto& v = edge.to;
+            if (v == target) {
+                return true;
+            }
+
+            // if v is not visited, or found a strictly smaller arrival time
+            auto bestIt = bestTime.find(v);
+            if (bestIt==bestTime.end() || ts < bestIt->second) {
+                bestTime[v] = ts;
+                q.push({v, ts});
+            }
+        }
+    }
+
+    return false;
+}
+
 
 
 }  // namespace algorithms

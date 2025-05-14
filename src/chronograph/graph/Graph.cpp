@@ -124,7 +124,7 @@ void Graph::addEdge(const std::string& id,
     e.to = to;
     addEvent(e);
     // Store the edge
-    edges_[id] = Edge{id, from, to, attrs};
+    edges_[id] = Edge{id, from, to, attrs, timestamp};
     // Update adjacency
     outgoing_[from].push_back(id);
     incoming_[to].push_back(id);
