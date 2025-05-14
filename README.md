@@ -26,7 +26,7 @@ Chronograph can be used for social-network evolution, financial audit trails, co
   Graph repositories support branches, fast-forward and three-way merges (with pluggable merge policies).
 
 - **Graph Algorithms**  
-  Reachability, shortest-path stubs, and more, via a dedicated `graph/algorithms/` submodule.
+  Reachability, shortest paths, connected components, topological sorting, cycle detecition, and more are offered in a dedicated `graph/algorithms/` submodule.
 
 ## Prerequisites
 
