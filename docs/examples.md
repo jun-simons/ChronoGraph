@@ -2,6 +2,8 @@
 
 The `examples/` directory contains standalone demos showing various ChronoGraph features.
 
+You can run them after building with the included CMake files.
+
 ---
 
 ```bash
@@ -17,5 +19,3 @@ make -j
 #   – More complex graph algorithms demo:
 ./examples/example_graph_demo
 ```
-
-_End of examples guide_  
