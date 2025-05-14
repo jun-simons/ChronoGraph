@@ -127,10 +127,10 @@ for (auto& [id,node] : g.getNodes()) {
 }
 ```
 
-This is the same Graph API described in [Graph Basics](tutorials/graph_basics.md)—snapshots, diff, algorithms, and DOT export all work on `repo.graph()` as well.
+This is the same Graph API described in [Graph Basics](graph_basics.md)—snapshots, diff, algorithms, and DOT export all work on `repo.graph()` as well.
 
 ---
 
 ## Next
 
-Continue to the [Algorithms Tutorial](tutorials/algorithms.md) to explore reachability, shortest paths, and connectivity analyses on your repository-backed graph.
+Continue to the [Algorithms Tutorial](algorithms.md) to explore reachability, shortest paths, and connectivity analyses on your repository-backed graph.
