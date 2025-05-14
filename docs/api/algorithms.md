@@ -65,7 +65,6 @@ bool isTimeRespectingReachable(
 
 ---
 
-```markdown
 ## Connected Components
 
 ### Weakly-Connected
