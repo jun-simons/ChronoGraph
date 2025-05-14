@@ -19,7 +19,7 @@ A temporal, versioned graph library in C++17 with Git-like branching & merging, 
 - [Quick Start](quick_start.md)  
 - **Tutorials**  
   - [Graph Basics](tutorials/graph_basics.md)  
-  - [Repository Basics](tutorials/repo_basics.md)  
+  - [Repository Basics](tutorials/repository_basics.md)  
   - [Algorithms](tutorials/algorithms.md)  
   - [Connectivity](tutorials/connectivity.md)  
 - **API Reference**  

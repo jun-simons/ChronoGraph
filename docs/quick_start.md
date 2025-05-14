@@ -2,7 +2,7 @@
 
 In just a few lines of C++ you can create a temporal graph, insert nodes and edges, take a time‐travel snapshot, and inspect the state. Let’s walk through a minimal example.
 
-*Note: This only demonstrates the temporal graph features, but not the repository handler.*  Read about repositories at [Repository Basics](tutorials/repo_basics.md)
+*Note: This only demonstrates the temporal graphs, but not the repository handler.*  Read about repositories at [Repository Basics](tutorials/repo_basics.md)
 
 ## Example: Simple Graph + Snapshot
 
@@ -58,5 +58,5 @@ g++ ../examples/quick_start.cpp -I../include -L. -lchronograph-graph -lchronogra
 ## Next Steps
 
 - View [Graph Basics](tutorials/graph_basics.md) to learn about events, deletions, and updates  
-- View [Repository Basics](tutorials/repo_basics.md) for Git-style branching & merging  
+- View [Repository Basics](tutorials/repository_basics.md) for Git-style branching & merging  
 - Try out algorithms like reachability and shortest-path in [Algorithms Tutorial](tutorials/algorithms.md)
