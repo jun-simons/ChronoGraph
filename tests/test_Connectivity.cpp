@@ -10,6 +10,7 @@
 using chronograph::Graph;
 using chronograph::graph::algorithms::weaklyConnectedComponents;
 using chronograph::graph::algorithms::stronglyConnectedComponents;
+using chronograph::graph::algorithms::hasCycle;
 
 static int64_t ts = 1;
 
@@ -162,4 +163,70 @@ TEST(Connectivity_Strong_MixedGraph, MultipleSCCs) {
         {"A","B"},
         {"C","D","E"}
     }));
+}
+
+
+static int64_t ts_cycle = 1;
+
+TEST(CycleDetection_EmptyGraph, NoNodes) {
+    Graph g;
+    EXPECT_FALSE(hasCycle(g));
+}
+
+TEST(CycleDetection_SingleNodeNoEdges, NoCycle) {
+    Graph g;
+    g.addNode("A", {}, ts_cycle++);
+    EXPECT_FALSE(hasCycle(g));
+}
+
+TEST(CycleDetection_SelfLoop, SingleNodeCycle) {
+    Graph g;
+    g.addNode("A", {}, ts_cycle++);
+    g.addEdge("e1","A","A",{}, ts_cycle++);
+    EXPECT_TRUE(hasCycle(g));
+}
+
+TEST(CycleDetection_LinearChain, NoCycle) {
+    Graph g;
+    g.addNode("A", {}, ts_cycle++);
+    g.addNode("B", {}, ts_cycle++);
+    g.addNode("C", {}, ts_cycle++);
+    g.addEdge("e1","A","B",{}, ts_cycle++);
+    g.addEdge("e2","B","C",{}, ts_cycle++);
+    EXPECT_FALSE(hasCycle(g));
+}
+
+TEST(CycleDetection_SimpleTwoNodeCycle, Cycle) {
+    Graph g;
+    g.addNode("X", {}, ts_cycle++);
+    g.addNode("Y", {}, ts_cycle++);
+    g.addEdge("e1","X","Y",{}, ts_cycle++);
+    g.addEdge("e2","Y","X",{}, ts_cycle++);
+    EXPECT_TRUE(hasCycle(g));
+}
+
+TEST(CycleDetection_ThreeNodeCycle, Cycle) {
+    Graph g;
+    g.addNode("A", {}, ts_cycle++);
+    g.addNode("B", {}, ts_cycle++);
+    g.addNode("C", {}, ts_cycle++);
+    // A → B → C → A
+    g.addEdge("e1","A","B",{}, ts_cycle++);
+    g.addEdge("e2","B","C",{}, ts_cycle++);
+    g.addEdge("e3","C","A",{}, ts_cycle++);
+    EXPECT_TRUE(hasCycle(g));
+}
+
+TEST(CycleDetection_MixedComponents, CycleExists) {
+    Graph g;
+    // Component 1: acyclic
+    g.addNode("P", {}, ts_cycle++);
+    g.addNode("Q", {}, ts_cycle++);
+    g.addEdge("e1","P","Q",{}, ts_cycle++);
+    // Component 2: cyclic
+    g.addNode("R", {}, ts_cycle++);
+    g.addNode("S", {}, ts_cycle++);
+    g.addEdge("e2","R","S",{}, ts_cycle++);
+    g.addEdge("e3","S","R",{}, ts_cycle++);
+    EXPECT_TRUE(hasCycle(g));
 }
