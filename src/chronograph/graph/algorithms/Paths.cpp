@@ -236,62 +236,6 @@ bool isTimeRespectingReachable(const Graph& g,
     return false;
 }
 
-// Directed cycle detection via DFS + recursion stack
-static bool dfsDetectCycle(
-    const Graph& g,
-    const std::string& u,
-    std::unordered_map<std::string,int>& state  // 0=unseen,1=visiting,2=done
-) {
-    state[u] = 1;  // visiting
-
-    const auto& outEdges = g.getOutgoing();
-    const auto& edges    = g.getEdges();
-
-    if (auto oit = outEdges.find(u); oit != outEdges.end()) {
-        for (auto const& eid : oit->second) {
-            auto eit = edges.find(eid);
-            if (eit == edges.end()) continue;
-            const auto& v = eit->second.to;
-
-            // if neighbor is in recursion stack -> cycle
-            if (state[v] == 1) {
-                return true;
-            }
-            // if unseen, recurse
-            if (state[v] == 0) {
-                if (dfsDetectCycle(g, v, state)) {
-                    return true;
-                }
-            }
-        }
-    }
-
-    state[u] = 2;  // done
-    return false;
-}
-
-bool hasCycle(const Graph& g) {
-    const auto& nodes = g.getNodes();
-    // track visitation state for each node
-    std::unordered_map<std::string,int> state;
-    state.reserve(nodes.size());
-    for (auto const& [nid, _] : nodes) {
-        state[nid] = 0;
-    }
-
-    // run DFS from each unvisited node
-    for (auto const& [nid, _] : nodes) {
-        if (state[nid] == 0) {
-            if (dfsDetectCycle(g, nid, state)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-
-
 
 }  // namespace algorithms
 }  // namespace graph

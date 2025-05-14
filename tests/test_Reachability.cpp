@@ -248,3 +248,4 @@ TEST(TimeRespectingReachability_SelfAndMissing, EdgeCases) {
     EXPECT_FALSE(isTimeRespectingReachable(g, "M", "N"));
     EXPECT_FALSE(isTimeRespectingReachable(g, "U", "V"));
 }
+

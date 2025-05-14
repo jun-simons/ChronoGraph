@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <cstdint>
 
 namespace chronograph {
 class Graph;
@@ -21,6 +22,12 @@ weaklyConnectedComponents(const Graph& g);
  */
 std::vector<std::vector<std::string>>
 stronglyConnectedComponents(const Graph& g);
+
+
+/**
+ * Return true if the directed graph contains any cycle.
+ */
+bool hasCycle(const Graph& g);
 
 }  // namespace algorithms
 }  // namespace graph
