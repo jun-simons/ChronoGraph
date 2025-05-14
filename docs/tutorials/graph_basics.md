@@ -2,7 +2,7 @@
 
 ChronoGraph represents your data as an **event-sourced** directed graph: every mutation (add/delete/update) is recorded as an `Event`, and the live graph state is just the replay of those events.
 
-*This tutorial goes over the basics of using graphs on their own. If you would like to use git-style commits, branching, merging, etc. you will need to create a Repository, which is essentially a wrapper around a graph.* Read more at [Repository Basics](repo_basics.md)
+*This tutorial goes over the basics of using graphs on their own. If you would like to use git-style commits, branching, merging, etc. you will need to create a Repository, which is essentially a wrapper around a graph.* Read more at [Repository Basics](repository_basics.md)
 
 ## 1. Creating a Graph
 
@@ -122,4 +122,4 @@ dot -Tpng graph.dot -o graph.png
 ## 7. Next Steps
 - Learn about **snapshots** in [Time-Travel & Snapshots](algorithms.md)  
 - Explore **diffing**, **branches** & **merging** in the next tutorial  
-- Try out **algorithms** (reachability, shortest-path) in [Algorithms](algorithms.md)
+- Try out **algorithms** (reachability, shortest-path) in [Algorithms](algorithms_basics.md)

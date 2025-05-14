@@ -133,4 +133,4 @@ This is the same Graph API described in [Graph Basics](graph_basics.md)—snapsh
 
 ## Next
 
-Continue to the [Algorithms Tutorial](algorithms.md) to explore reachability, shortest paths, and connectivity analyses on your repository-backed graph.
+Continue to the [Algorithms Tutorial](algorithms_basics.md) to explore reachability, shortest paths, and connectivity analyses on your repository-backed graph.
