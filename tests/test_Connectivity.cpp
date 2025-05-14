@@ -232,3 +232,90 @@ TEST(CycleDetection_MixedComponents, CycleExists) {
     g.addEdge("e3","S","R",{}, ts_cycle++);
     EXPECT_TRUE(hasCycle(g));
 }
+
+using chronograph::graph::algorithms::topologicalSort;
+
+// Helper: verify that 'order' is a valid topological ordering of g
+bool isValidTopoOrder(const std::vector<std::string>& order, const Graph& g) {
+    // map node -> its position in 'order'
+    std::unordered_map<std::string,size_t> pos;
+    for (size_t i = 0; i < order.size(); ++i) {
+        pos[order[i]] = i;
+    }
+    // every node must appear exactly once
+    const auto& nodes = g.getNodes();
+    if (pos.size() != nodes.size()) return false;
+    for (auto& [nid, _] : nodes) {
+        if (!pos.count(nid)) return false;
+    }
+    // for every edge u->v, pos[u] < pos[v]
+    const auto& out = g.getOutgoing();
+    const auto& edges = g.getEdges();
+    for (auto& [u, eids] : out) {
+        for (auto& eid : eids) {
+            auto it = edges.find(eid);
+            if (it == edges.end()) continue;
+            auto& v = it->second.to;
+            if (pos[u] >= pos[v]) return false;
+        }
+    }
+    return true;
+}
+
+TEST(TopologicalSort_EmptyGraph, ReturnsEmpty) {
+    Graph g;
+    auto opt = topologicalSort(g);
+    ASSERT_TRUE(opt.has_value());
+    EXPECT_TRUE(opt->empty());
+}
+
+TEST(TopologicalSort_SingleNode, ReturnsThatNode) {
+    Graph g;
+    g.addNode("A", {}, ts++);
+    auto opt = topologicalSort(g);
+    ASSERT_TRUE(opt.has_value());
+    EXPECT_EQ(*opt, std::vector<std::string>{"A"});
+}
+
+TEST(TopologicalSort_SimpleChain, AtoC) {
+    Graph g;
+    g.addNode("A", {}, ts++);
+    g.addNode("B", {}, ts++);
+    g.addNode("C", {}, ts++);
+    g.addEdge("e1", "A", "B", {}, ts++);
+    g.addEdge("e2", "B", "C", {}, ts++);
+    auto opt = topologicalSort(g);
+    ASSERT_TRUE(opt.has_value());
+    EXPECT_TRUE(isValidTopoOrder(*opt, g));
+    // Optionally check exactly one possible order
+    EXPECT_EQ(*opt, (std::vector<std::string>{"A","B","C"}));
+}
+
+TEST(TopologicalSort_BranchedDAG, ValidOrder) {
+    Graph g;
+    // A->B, A->C, B->D, C->D
+    for (auto id : {"A","B","C","D"}) g.addNode(id, {}, ts++);
+    g.addEdge("e1","A","B",{}, ts++);
+    g.addEdge("e2","A","C",{}, ts++);
+    g.addEdge("e3","B","D",{}, ts++);
+    g.addEdge("e4","C","D",{}, ts++);
+    auto opt = topologicalSort(g);
+    ASSERT_TRUE(opt.has_value());
+    EXPECT_TRUE(isValidTopoOrder(*opt, g));
+    // must start with A and end with D
+    EXPECT_EQ((*opt).front(), "A");
+    EXPECT_EQ((*opt).back(),  "D");
+}
+
+TEST(TopologicalSort_WithCycle, DetectsCycle) {
+    Graph g;
+    g.addNode("A", {}, ts++);
+    g.addNode("B", {}, ts++);
+    g.addNode("C", {}, ts++);
+    // cycle A->B->C->A
+    g.addEdge("e1","A","B",{}, ts++);
+    g.addEdge("e2","B","C",{}, ts++);
+    g.addEdge("e3","C","A",{}, ts++);
+    auto opt = topologicalSort(g);
+    EXPECT_FALSE(opt.has_value());
+}

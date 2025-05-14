@@ -238,6 +238,70 @@ bool hasCycle(const Graph& g) {
     return false;
 }
 
+std::optional<std::vector<std::string>>
+topologicalSort(const Graph& g)
+{
+    // 1) Gather all nodes and build in‐degree map
+    const auto& nodes    = g.getNodes();
+    const auto& outEdges = g.getOutgoing();
+    const auto& edges    = g.getEdges();
+
+    std::unordered_map<std::string,int> indegree;
+    indegree.reserve(nodes.size());
+    for (const auto& [nid, _] : nodes) {
+        indegree[nid] = 0;
+    }
+
+    // For every outgoing edge u→v, increment indegree[v]
+    for (const auto& [u, eids] : outEdges) {
+        for (const auto& eid : eids) {
+            auto it = edges.find(eid);
+            if (it == edges.end()) continue;
+            const auto& v = it->second.to;
+            // only count if v is a known node
+            if (indegree.count(v)) {
+                indegree[v]++;
+            }
+        }
+    }
+
+    // 2) Initialize queue with all zero‐indegree nodes
+    std::queue<std::string> q;
+    for (const auto& [nid, deg] : indegree) {
+        if (deg == 0) q.push(nid);
+    }
+
+    std::vector<std::string> order;
+    order.reserve(nodes.size());
+
+    // 3) Kahn’s algorithm
+    while (!q.empty()) {
+        auto u = q.front(); q.pop();
+        order.push_back(u);
+
+        // For each neighbor v of u
+        auto oit = outEdges.find(u);
+        if (oit == outEdges.end()) continue;
+        for (const auto& eid : oit->second) {
+            auto eit = edges.find(eid);
+            if (eit == edges.end()) continue;
+            const auto& v = eit->second.to;
+            auto dit = indegree.find(v);
+            if (dit == indegree.end()) continue;
+            if (--(dit->second) == 0) {
+                q.push(v);
+            }
+        }
+    }
+
+    // 4) If we ordered all nodes, succeed; else cycle detected
+    if (order.size() == nodes.size()) {
+        return order;
+    } else {
+        return std::nullopt;
+    }
+}
+
 }  // namespace algorithms
 }  // namespace graph
 }  // namespace chronograph
