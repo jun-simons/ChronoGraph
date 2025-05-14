@@ -1,6 +1,6 @@
 # Algorithms Basics
 
-ChronoGraph bundles a set of graph algorithms under `chronograph::graph::algorithms`. You simply pass your `Graph` (or `Snapshot`) and get back results—no need to mess with internals.
+ChronoGraph bundles a set of graph algorithms under `chronograph::graph::algorithms`. To use it, you simply pass your `Graph` (or `Snapshot`) and get back results.
 
 ## 1. Reachability
 
@@ -38,7 +38,7 @@ if (!path.empty()) {
 
 ## 3. Time‐Travel Reachability
 
-Ask “was `target` reachable from `start` **as of** timestamp T?”:
+Check if `target` is reachable from `start` **as of** timestamp T?”:
 
 ```cpp
 #include <chronograph/graph/Snapshot.h>
@@ -104,6 +104,5 @@ if (chronograph::graph::algorithms::hasCycle(g)) {
 
 ## Next Steps
 
-- Check out **[Connectivity Tutorial](connectivity.md)** for deeper dives  
 - Explore **[Repository Basics](repo_basics.md)** to version your graph  
 - See **[Examples](examples.md)** for complete sample programs  
