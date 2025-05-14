@@ -20,7 +20,7 @@ Chronograph can be used for social-network evolution, financial audit trails, co
   Compute added/removed/updated nodes and edges between two points in time, or between two branches
 
 - **Repository & Commits**  
-  ChronoGraph provides a `Respoitory` object at the top level. Changes to the graph are committed and stored as `Commit` objects.
+  ChronoGraph provides a `Respository` object at the top level. Changes to the graph are committed and stored as `Commit` objects.
 
 - **Branching & Merging**  
   Graph repositories support branches, fast-forward and three-way merges (with pluggable merge policies).
