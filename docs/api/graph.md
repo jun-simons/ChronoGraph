@@ -233,8 +233,6 @@ auto d = g.diff(100, 200);
 for (auto& n : d.nodesAdded) { /* … */ }
 ```
 
-
 ---
 
-```markdown
 *End of Graph API reference.*  
