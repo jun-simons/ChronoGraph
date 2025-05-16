@@ -104,5 +104,5 @@ if (chronograph::graph::algorithms::hasCycle(g)) {
 
 ## Next Steps
 
-- Explore **[Repository Basics](repo_basics.md)** to version your graph  
+- Explore **[Repository Basics](repository_basics.md)** to version your graph  
 - See **[Examples](examples.md)** for complete sample programs  
