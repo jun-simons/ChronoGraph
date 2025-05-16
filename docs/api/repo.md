@@ -139,3 +139,24 @@ void checkout(const std::string& branchName);
 - **Parameters:**  
   - `branchName` – must already exist  
 - **Throws:** `runtime_error` if branch not found.  
+
+### `listBranches()`
+```cpp
+std::vector<std::string> listBranches() const;
+```
+
+- **Description:** Return all branch names in the repository.  
+- **Returns:** `vector<string>` of branch names.  
+
+
+### `listCommits(branchName)`
+
+```cpp
+std::vector<Commit> listCommits(const std::string& branchName) const;
+```
+
+- **Description:** List `Commit` objects on `branchName`, from root → tip.  
+- **Parameters:**  
+  - `branchName` – branch to inspect  
+- **Returns:** `vector<Commit>` in chronological order.  
+- **Throws:** `runtime_error` if branch not found.  
