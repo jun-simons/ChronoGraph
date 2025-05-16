@@ -174,6 +174,11 @@ const std::vector<Event>& getEventLog() const;
 
 - **`getEventLog()`** returns the full append-only event sequence (`EventType`, `entityId`, `timestamp`, etc.).
 
+---
+
+
+### Checkpoints
+
 ```cpp
 struct Checkpoint { 
     std::int64_t timestamp; 
@@ -185,3 +190,44 @@ struct Checkpoint {
 
 const std::vector<Checkpoint>& getCheckpoints() const;
 ```
+- **Purpose:** Speed up snapshot construction.  
+- **`getCheckpoints()`** returns periodically‐saved states (every N events).
+
+## 4. Utilities
+
+### Applying & Clearing State
+
+```cpp
+void applyEvent(const Event& e);
+void clearStateKeepLog();
+void clearGraph();
+```
+- `applyEvent(e)` – update live state from event `e` without logging.
+- `clearStateKeepLog()` – wipe state but keep `eventLog_` (for replay).
+- `clearGraph()` – wipe both state and history.
+
+
+---
+
+### Diff
+
+```cpp
+struct DiffResult {
+  std::vector<Node>                 nodesAdded;
+  std::vector<std::string>          nodesRemoved;
+  std::vector<std::pair<Node,Node>> nodesUpdated;
+  std::vector<Edge>                 edgesAdded;
+  std::vector<std::string>          edgesRemoved;
+  std::vector<std::pair<Edge,Edge>> edgesUpdated;
+};
+
+DiffResult diff(std::int64_t t1, std::int64_t t2) const;
+```
+
+Compute changes between two timestamps:
+
+- **Returns** a `DiffResult` grouping added/removed/updated nodes and edges.  
+- **Usage:**  
+  ```cpp
+  auto d = g.diff(100, 200);
+  for (auto& n : d.nodesAdded) { /* … */ }
