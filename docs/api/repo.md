@@ -160,3 +160,47 @@ std::vector<Commit> listCommits(const std::string& branchName) const;
   - `branchName` – branch to inspect  
 - **Returns:** `vector<Commit>` in chronological order.  
 - **Throws:** `runtime_error` if branch not found.  
+
+
+### `getCommitGraph()`
+
+```cpp
+CommitGraph getCommitGraph() const;
+```
+
+- **Description:** Return a `CommitGraph` struct representing the DAG of all commits.  
+- **Returns:** `CommitGraph` (maps `commitIds`, `parents`, `children`).  
+
+### `merge(branchName, policy)`
+
+```cpp
+MergeResult merge(const std::string& branchName,
+                  MergePolicy policy = MergePolicy::OURS);
+```
+
+- **Description:** Merge `branchName` into the current branch (`HEAD`).  
+- **Parameters:**  
+  - `branchName` – branch to merge from  
+  - `policy`     – conflict resolution strategy  
+- **Returns:** `MergeResult` containing new merge commit ID and any conflicts.  
+- **Effects:**  
+  - Fast-forward if possible, else create a two-parent commit.  
+  - Rebuild working graph to merged state.  
+
+
+### `graph()`
+
+```cpp
+const Graph& graph() const;
+```
+
+- **Description:** Access the current working‐tree `Graph` after checkout or staged mutators.  
+- **Usage:**  
+```cpp
+  const auto& g = repo.graph();
+  // use g.getNodes(), algorithms, snapshots, etc.
+```
+
+---
+
+*End of Repository API reference.*  
