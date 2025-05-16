@@ -59,4 +59,4 @@ g++ ../examples/quick_start.cpp -I../include -L. -lchronograph-graph -lchronogra
 
 - View [Graph Basics](tutorials/graph_basics.md) to learn about events, deletions, and updates  
 - View [Repository Basics](tutorials/repository_basics.md) for Git-style branching & merging  
-- Try out algorithms like reachability and shortest-path in [Algorithms Tutorial](tutorials/algorithms.md)
+- Try out algorithms like reachability and shortest-path in [Algorithms Tutorial](tutorials/algorithms_basics.md)
