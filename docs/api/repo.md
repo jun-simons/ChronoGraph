@@ -67,3 +67,41 @@ public:
     const Graph& graph() const;
 };
 ```
+
+
+---
+
+### `init(rootBranch)`
+
+```cpp
+static Repository init(const std::string& rootBranch = "main");
+```
+
+- **Description:** Create a new repository with one initial “root” commit on `rootBranch`.  
+- **Parameters:**  
+  - `rootBranch` – name of the first branch (default `"main"`)  
+- **Returns:** A `Repository` instance ready for staging. 
+
+### Staging Mutators
+
+```cpp
+void addNode(const std::string& id,
+             const std::map<std::string,std::string>& attrs,
+             std::int64_t timestamp);
+void delNode(const std::string& id, std::int64_t timestamp);
+void addEdge(const std::string& id,
+             const std::string& from,
+             const std::string& to,
+             const std::map<std::string,std::string>& attrs,
+             std::int64_t timestamp);
+void delEdge(const std::string& id, std::int64_t timestamp);
+void updateNode(const std::string& id,
+                const std::map<std::string,std::string>& attrs,
+                std::int64_t timestamp);
+void updateEdge(const std::string& id,
+                const std::map<std::string,std::string>& attrs,
+                std::int64_t timestamp);
+```
+- Mirror `Graph`’s mutators, but stage into the working-tree.  
+- All changes affect `repo.graph()` and are recorded for the next commit.  
+- **Parameters** match `Graph` methods exactly (ID, attrs, ts).  
