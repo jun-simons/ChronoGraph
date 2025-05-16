@@ -104,4 +104,38 @@ void updateEdge(const std::string& id,
 ```
 - Mirror `Graph`’s mutators, but stage into the working-tree.  
 - All changes affect `repo.graph()` and are recorded for the next commit.  
-- **Parameters** match `Graph` methods exactly (ID, attrs, ts).  
+- **Parameters** match `Graph` methods exactly (ID, attrs, ts). 
+
+
+### `commit(message)`
+```cpp
+std::string commit(const std::string& message = "");
+```
+- **Description:** Record all staged events since the last commit into a new `Commit`.  
+- **Parameters:**  
+  - `message` – commit message (default empty)  
+- **Returns:** New commit `id`.  
+- **Effects:** Advances the current branch’s tip to this new commit.  
+
+### `branch(branchName)`
+
+```cpp
+void branch(const std::string& branchName);
+```
+
+- **Description:** Create a new branch pointer at the current `HEAD` commit.  
+- **Parameters:**  
+  - `branchName` – name of the new branch  
+- **Effects:** No change to working graph; simply adds a branch label.  
+
+
+### `checkout(branchName)`
+
+```cpp
+void checkout(const std::string& branchName);
+```
+
+- **Description:** Switch `HEAD` to the tip of `branchName`. Rebuilds the working graph by replaying or fast-forwarding commits.  
+- **Parameters:**  
+  - `branchName` – must already exist  
+- **Throws:** `runtime_error` if branch not found.  
