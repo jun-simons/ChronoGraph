@@ -11,22 +11,22 @@ Chronograph can be used for social-network evolution, financial audit trails, co
 ## Features
 
 - **Event Sourcing**  
-  Append-only history of node/edge additions, deletions, and updates with timestamps.
+  Full history of node/edge additions, deletions, and updates with timestamps
 
 - **Snapshots & Time-Travel**  
-  View the graph at a certain point in time, or *replay* the graph changes between two points in time.
+  View the graph at a certain point in time, or *replay* the graph changes between two points in time
 
 - **Diffing**  
   Compute added/removed/updated nodes and edges between two points in time, or between two branches
 
 - **Repository & Commits**  
-  ChronoGraph provides a `Respository` object at the top level. Changes to the graph are committed and stored as `Commit` objects.
+  ChronoGraph provides a `Respository` object at the top level. Changes to the graph are committed and stored as `Commit` objects
 
 - **Branching & Merging**  
-  Graph repositories support branches, fast-forward and three-way merges (with pluggable merge policies).
+  Graph repositories support branching, and fast-forward and three-way merges
 
 - **Graph Algorithms**  
-  Reachability, shortest paths, connected components, topological sorting, cycle detecition, and more are offered in a dedicated `graph/algorithms/` submodule.
+  Reachability, shortest paths, connected components, topological sorting, cycle detection, and more are offered in a dedicated `graph/algorithms/` submodule
 
 ## Prerequisites
 
