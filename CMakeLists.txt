@@ -12,12 +12,7 @@ add_subdirectory(src/chronograph/graph)
 add_subdirectory(src/chronograph/repo)
 add_subdirectory(src/chronograph/repo/utils)
 add_subdirectory(examples)
-add_subdirectory(${CMAKE_SOURCE_DIR}/bindings)
-# add_subdirectory(tests)
-# add_subdirectory(src/chronograph/common)
-
-# Include public headers
-# include_directories(${PROJECT_SOURCE_DIR}/include)
+add_subdirectory(bindings)
 
 add_library(chronograph INTERFACE)
 target_link_libraries(chronograph
@@ -26,16 +21,6 @@ target_link_libraries(chronograph
     chronograph-repo
     chronograph-repo-utils
 )
-
-# Core library target
-# add_library(chronograph
-#     src/Event.cpp
-#     src/Node.cpp
-#     src/Edge.cpp
-#     src/Graph.cpp
-#     src/Snapshot.cpp
-#     src/Repository.cpp
-# )
 
 # Specify include directories for consumers
 target_include_directories(chronograph INTERFACE
@@ -62,33 +47,35 @@ include_directories(${GTEST_INCLUDE_DIRS})
 
 # Unit test targets
 
-add_executable(test_Graph tests/test_Graph.cpp)
-target_link_libraries(test_Graph PRIVATE chronograph GTest::GTest GTest::Main)
-add_test(NAME test_Graph COMMAND test_Graph)
+add_subdirectory(tests)
 
-add_executable(test_Snapshot tests/test_Snapshot.cpp)
-target_link_libraries(test_Snapshot PRIVATE chronograph GTest::GTest GTest::Main)
-add_test(NAME test_Snapshot COMMAND test_Snapshot)
+# add_executable(test_Graph tests/test_Graph.cpp)
+# target_link_libraries(test_Graph PRIVATE chronograph GTest::GTest GTest::Main)
+# add_test(NAME test_Graph COMMAND test_Graph)
 
-add_executable(test_Diff tests/test_Diff.cpp)
-target_link_libraries(test_Diff PRIVATE chronograph GTest::GTest GTest::Main)
-add_test(NAME test_Diff COMMAND test_Diff)
+# add_executable(test_Snapshot tests/test_Snapshot.cpp)
+# target_link_libraries(test_Snapshot PRIVATE chronograph GTest::GTest GTest::Main)
+# add_test(NAME test_Snapshot COMMAND test_Snapshot)
 
-add_executable(test_Repository tests/test_Repository.cpp)
-target_link_libraries(test_Repository PRIVATE chronograph GTest::GTest GTest::Main)
-add_test(NAME test_Repository COMMAND test_Repository)
+# add_executable(test_Diff tests/test_Diff.cpp)
+# target_link_libraries(test_Diff PRIVATE chronograph GTest::GTest GTest::Main)
+# add_test(NAME test_Diff COMMAND test_Diff)
 
-add_executable(test_Merge tests/test_Merge.cpp)
-target_link_libraries(test_Merge PRIVATE chronograph GTest::GTest GTest::Main)
-add_test(NAME test_Merge COMMAND test_Merge)
+# add_executable(test_Repository tests/test_Repository.cpp)
+# target_link_libraries(test_Repository PRIVATE chronograph GTest::GTest GTest::Main)
+# add_test(NAME test_Repository COMMAND test_Repository)
 
-add_executable(test_Reachability tests/test_Reachability.cpp)
-target_link_libraries(test_Reachability PRIVATE chronograph GTest::GTest GTest::Main)
-add_test(NAME test_Reachability COMMAND test_Reachability)
+# add_executable(test_Merge tests/test_Merge.cpp)
+# target_link_libraries(test_Merge PRIVATE chronograph GTest::GTest GTest::Main)
+# add_test(NAME test_Merge COMMAND test_Merge)
 
-add_executable(test_Connectivity tests/test_Connectivity.cpp)
-target_link_libraries(test_Connectivity PRIVATE chronograph GTest::GTest GTest::Main)
-add_test(NAME test_Connectivity COMMAND test_Connectivity)
+# add_executable(test_Reachability tests/test_Reachability.cpp)
+# target_link_libraries(test_Reachability PRIVATE chronograph GTest::GTest GTest::Main)
+# add_test(NAME test_Reachability COMMAND test_Reachability)
+
+# add_executable(test_Connectivity tests/test_Connectivity.cpp)
+# target_link_libraries(test_Connectivity PRIVATE chronograph GTest::GTest GTest::Main)
+# add_test(NAME test_Connectivity COMMAND test_Connectivity)
 
 # Python bindings (for future addition)
 # add_subdirectory(python)

@@ -32,3 +32,13 @@ Release/
 # System files
 *.swp
 *~
+
+#python 
+__pycache__/
+*.pyc
+*.pyd
+
+# Virtual environment
+venv/
+.venv/
+env/
