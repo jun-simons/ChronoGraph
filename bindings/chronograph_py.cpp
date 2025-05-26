@@ -13,6 +13,12 @@ using namespace chronograph;
 PYBIND11_MODULE(chronograph, m) {
     m.doc() = "ChronoGraph C++ binding";
 
+    // --- Node & Edge objects ---
+    py::class_<chronograph::Node>(m, "Node")
+    .def_readwrite("id",         &chronograph::Node::id)
+    .def_readwrite("attributes", &chronograph::Node::attributes)
+    ;
+
     // --- Graph ---
     py::class_<Graph>(m, "Graph")
         .def(py::init<>())
