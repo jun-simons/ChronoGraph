@@ -17,6 +17,17 @@ PYBIND11_MODULE(chronograph, m) {
     py::class_<chronograph::Node>(m, "Node")
         .def_readwrite("id",         &chronograph::Node::id)
         .def_readwrite("attributes", &chronograph::Node::attributes)
+        .def("__getitem__",
+            [](const chronograph::Node &n, const std::string &key) {
+                auto it = n.attributes.find(key);
+                if (it == n.attributes.end())
+                    throw py::key_error("Key '" + key + "' not found");
+                return it->second;
+            })
+        .def("__repr__",
+            [](const chronograph::Node &n){
+                return "<Node id='" + n.id + "'>";
+            })
         ;
     py::class_<chronograph::Edge>(m, "Edge")
         .def_readwrite("id",               &chronograph::Edge::id)
