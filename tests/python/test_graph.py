@@ -1,7 +1,7 @@
-import chronograph_module
+import chronograph
 
 def test_graph_basic_nodes_edges():
-    g = chronograph_module.Graph()
+    g = chronograph.Graph()
     # no nodes initially
     assert g.get_nodes() == {}
     g.add_node("A", {"role":"admin"}, 1)

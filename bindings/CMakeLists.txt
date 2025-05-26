@@ -3,9 +3,9 @@
 pybind11_add_module(chronograph_module
     chronograph_py.cpp
 )
-# set_target_properties(chronograph_module PROPERTIES
-#     OUTPUT_NAME "chronograph"
-# )
+set_target_properties(chronograph_module PROPERTIES
+    OUTPUT_NAME "chronograph"
+)
 
 target_link_libraries(chronograph_module
   PRIVATE
