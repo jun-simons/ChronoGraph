@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
 project(chronograph VERSION 0.1.0 LANGUAGES CXX)
 
+add_subdirectory(${PROJECT_SOURCE_DIR}/extern/pybind11)
+
 # Use C++17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -10,6 +12,7 @@ add_subdirectory(src/chronograph/graph)
 add_subdirectory(src/chronograph/repo)
 add_subdirectory(src/chronograph/repo/utils)
 add_subdirectory(examples)
+add_subdirectory(${CMAKE_SOURCE_DIR}/bindings)
 # add_subdirectory(tests)
 # add_subdirectory(src/chronograph/common)
 
