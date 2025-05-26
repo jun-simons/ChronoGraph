@@ -15,9 +15,16 @@ PYBIND11_MODULE(chronograph, m) {
 
     // --- Node & Edge objects ---
     py::class_<chronograph::Node>(m, "Node")
-    .def_readwrite("id",         &chronograph::Node::id)
-    .def_readwrite("attributes", &chronograph::Node::attributes)
-    ;
+        .def_readwrite("id",         &chronograph::Node::id)
+        .def_readwrite("attributes", &chronograph::Node::attributes)
+        ;
+    py::class_<chronograph::Edge>(m, "Edge")
+        .def_readwrite("id",               &chronograph::Edge::id)
+        .def_readwrite("from",             &chronograph::Edge::from)
+        .def_readwrite("to",               &chronograph::Edge::to)
+        .def_readwrite("attributes",       &chronograph::Edge::attributes)
+        .def_readwrite("created_timestamp", &chronograph::Edge::createdTimestamp)
+        ;
 
     // --- Graph ---
     py::class_<Graph>(m, "Graph")
