@@ -43,10 +43,14 @@ PYBIND11_MODULE(chronograph, m) {
         .def("add_node", &Graph::addNode,
              py::arg("id"), py::arg("attrs"), py::arg("timestamp"))
         .def("del_node", &Graph::delNode, py::arg("id"), py::arg("timestamp"))
+        .def("update_node", &Graph::updateNode, 
+            py::arg("id"), py::arg("attrs"), py::arg("timestamp"))
         .def("add_edge", &Graph::addEdge,
              py::arg("id"), py::arg("from"), py::arg("to"),
              py::arg("attrs"), py::arg("timestamp"))
         .def("del_edge", &Graph::delEdge, py::arg("id"), py::arg("timestamp"))
+        .def("update_edge", &Graph::updateEdge, 
+            py::arg("id"), py::arg("attrs"), py::arg("timestamp"))
         .def("get_nodes", &Graph::getNodes)
         .def("get_edges", &Graph::getEdges)
         .def("get_outgoing", &Graph::getOutgoing)
