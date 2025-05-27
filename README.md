@@ -4,6 +4,8 @@
 
 A temporal, versioned graph library in C++17 with Git-like branching & merging, time-travel snapshots, diffs, and graph algorithms.
 
+Python support is provided via PyBind11.
+
 Chronograph can be used for social-network evolution, financial audit trails, collaborative knowledge-graph editing, and more.
 
 ---
@@ -34,6 +36,7 @@ You need:
 - *CMake 3.14* or later
 - A C++17-capable compiler (e.g. GCC 7+, Clang 5+)
 - GoogleTest (or internet access: by default, GTest is fetched by CMake's FetchContent)
+- For using ChronoGraph in python, see additional requirements in binding documentation
 
 ## Getting Started
 
