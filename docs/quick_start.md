@@ -4,6 +4,8 @@ In just a few lines of C++ you can create a temporal graph, insert nodes and edg
 
 *Note: This only demonstrates the temporal graphs, but not the repository handler.*  Read about repositories at [Repository Basics](tutorials/repository_basics.md)
 
+If you would like to use this library with python, see [Python Bindings] (bindings/python_bindings.md)
+
 ## Example: Simple Graph + Snapshot
 
 Create a file `examples/quick_start.cpp`:
