@@ -15,7 +15,7 @@ PYBIND11_MODULE(chronograph, m) {
 
     // --- Node & Edge objects ---
     py::class_<chronograph::Node>(m, "Node")
-        .def_readwrite("id",         &chronograph::Node::id)
+        .def_readwrite("id", &chronograph::Node::id)
         .def_readwrite("attributes", &chronograph::Node::attributes)
         .def("__getitem__",
             [](const chronograph::Node &n, const std::string &key) {
@@ -30,10 +30,10 @@ PYBIND11_MODULE(chronograph, m) {
             })
         ;
     py::class_<chronograph::Edge>(m, "Edge")
-        .def_readwrite("id",               &chronograph::Edge::id)
-        .def_readwrite("from",             &chronograph::Edge::from)
-        .def_readwrite("to",               &chronograph::Edge::to)
-        .def_readwrite("attributes",       &chronograph::Edge::attributes)
+        .def_readwrite("id", &chronograph::Edge::id)
+        .def_readwrite("from",&chronograph::Edge::from)
+        .def_readwrite("to", &chronograph::Edge::to)
+        .def_readwrite("attributes", &chronograph::Edge::attributes)
         .def_readwrite("created_timestamp", &chronograph::Edge::createdTimestamp)
         ;
 
@@ -75,10 +75,10 @@ PYBIND11_MODULE(chronograph, m) {
 
     // Bind MergePolicy enum
     py::enum_<MergePolicy>(m, "MergePolicy")
-        .value("OURS",            MergePolicy::OURS)
-        .value("THEIRS",          MergePolicy::THEIRS)
+        .value("OURS", MergePolicy::OURS)
+        .value("THEIRS", MergePolicy::THEIRS)
         .value("ATTRIBUTE_UNION", MergePolicy::ATTRIBUTE_UNION)
-        .value("INTERACTIVE",     MergePolicy::INTERACTIVE)
+        .value("INTERACTIVE", MergePolicy::INTERACTIVE)
         .export_values();
 
     py::class_<Repository>(m, "Repository")
