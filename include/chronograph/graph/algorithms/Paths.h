@@ -45,10 +45,6 @@ bool isTimeRespectingReachable(const Graph& g,
     const std::string& start,
     const std::string& target);
 
-/**
- * Return true if the directed graph contains any cycle.
- */
-bool hasCycle(const Graph& g);
 
 }  // namespace algorithms
 }  // namespace graph

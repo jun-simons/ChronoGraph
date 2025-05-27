@@ -66,14 +66,19 @@ PYBIND11_MODULE(chronograph, m) {
         ;
 
     // --- Algorithms (free functions) ---
-    m.def("is_reachable", &graph::algorithms::isReachable,
+    auto alg = m.def_submodule("algorithms", "Graph algorithms");
+    alg.def("is_reachable", &graph::algorithms::isReachable,
           py::arg("g"), py::arg("start"), py::arg("target"));
-    m.def("shortest_path", &graph::algorithms::shortestPath,
+    alg.def("shortest_path", &graph::algorithms::shortestPath,
           py::arg("g"), py::arg("start"), py::arg("target"));
-    m.def("weakly_connected_components", &graph::algorithms::weaklyConnectedComponents);
-    m.def("strongly_connected_components", &graph::algorithms::stronglyConnectedComponents);
-    m.def("has_cycle", &graph::algorithms::hasCycle);
-    m.def("topological_sort", &graph::algorithms::topologicalSort);
+    alg.def("is_reachable_at", &graph::algorithms::isReachableAt,
+          py::arg("g"), py::arg("start"), py::arg("target"), py::arg("timestamp"));
+    alg.def("is_time_respecting_reachable", &graph::algorithms::isTimeRespectingReachable,
+          py::arg("g"), py::arg("start"), py::arg("target"));
+    alg.def("weakly_connected_components", &graph::algorithms::weaklyConnectedComponents);
+    alg.def("strongly_connected_components", &graph::algorithms::stronglyConnectedComponents);
+    alg.def("has_cycle", &graph::algorithms::hasCycle);
+    alg.def("topological_sort", &graph::algorithms::topologicalSort);
 
     // --- Repository ---
 
