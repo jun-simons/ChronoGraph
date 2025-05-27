@@ -4,9 +4,8 @@
 
 A temporal, versioned graph library in C++17 with Git-like branching & merging, time-travel snapshots, diffs, and graph algorithms.
 
-Python support is provided via PyBind11.
+Chronograph can be used for social-network evolution, financial audit trails, collaborative knowledge-graph editing, and more. Python support is provided via PyBind11.
 
-Chronograph can be used for social-network evolution, financial audit trails, collaborative knowledge-graph editing, and more.
 
 ---
 
