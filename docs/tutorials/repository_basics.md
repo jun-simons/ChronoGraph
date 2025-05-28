@@ -114,6 +114,8 @@ if (!result.conflicts.empty()) {
 - Creates a two-parent commit on true three-way merges
 - Returns any conflicts for manual resolution
 
+*Note: merging is still under development: currently, only simple priority-based conflict resolution is supported, but alternative merge options are in the works*
+
 ---
 
 ## 8. Accessing the Working Graph
