@@ -2,6 +2,8 @@
 
 ChronoGraph exposes its core C++ API to Python via PyBind11.  This document walks through how to build, install, and use the Python module.
 
+Functions generally follow the same structure of arguments, and function names follow the underscore (as opposed to camelCase) naming conventions.
+
 ---
 
 ## 1. Requirements
@@ -143,6 +145,7 @@ nodes = repo.graph().get_nodes()
 Merging:
 
 ```python
+from chronograph import MergePolicy
 res = repo.merge("other_branch", policy=chronograph.MergePolicy.OURS)
 conflicts = res.conflicts
 ```
