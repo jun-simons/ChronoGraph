@@ -82,13 +82,24 @@ PYBIND11_MODULE(chronograph, m) {
 
     // --- Repository ---
 
-    // Bind MergePolicy enum
+    // Provide bindings for enums and structs
     py::enum_<MergePolicy>(m, "MergePolicy")
         .value("OURS", MergePolicy::OURS)
         .value("THEIRS", MergePolicy::THEIRS)
         .value("ATTRIBUTE_UNION", MergePolicy::ATTRIBUTE_UNION)
         .value("INTERACTIVE", MergePolicy::INTERACTIVE)
         .export_values();
+
+    py::class_<chronograph::Conflict>(m, "Conflict")
+        .def_readonly("kind",    &chronograph::Conflict::kind)
+        .def_readonly("ours",    &chronograph::Conflict::ours)
+        .def_readonly("theirs",  &chronograph::Conflict::theirs)
+        ;
+
+    py::class_<chronograph::MergeResult>(m, "MergeResult")
+        .def_readonly("merge_commit_id", &chronograph::MergeResult::mergeCommitId)
+        .def_readonly("conflicts",       &chronograph::MergeResult::conflicts)
+        ;
 
     py::class_<Repository>(m, "Repository")
         .def_static("init", &Repository::init, py::arg("root_branch") = "main")
