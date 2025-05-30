@@ -24,4 +24,4 @@ make -j
 
 ### Python Examples
 
-Python examples are included in the `examples/python/` directory.
+Python usage examples are included in the `examples/python/` directory. ChronoGraph must be built and included as a Python extension at `build/bindings/chronograph.so`.
