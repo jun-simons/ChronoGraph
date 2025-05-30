@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 project(chronograph VERSION 0.1.0 LANGUAGES CXX)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/extern/pybind11)
+add_subdirectory(${CMAKE_SOURCE_DIR}/extern/CLI11)
 
 # Use C++17
 set(CMAKE_CXX_STANDARD 17)

@@ -1,6 +1,4 @@
 # Find CLI11 in extern/cli11
-add_subdirectory(${CMAKE_SOURCE_DIR}/extern/CLI11)
-
 add_executable(chronograph_cli main.cpp)
 
 target_link_libraries(chronograph_cli
