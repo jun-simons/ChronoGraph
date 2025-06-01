@@ -46,6 +46,23 @@ bool isTimeRespectingReachable(const Graph& g,
     const std::string& target);
 
 
+/**
+ * Compute a weighted shortest path from `start` to `target` in `g`.
+ * - `weightKey` is the attribute name in each Edge::attributes map that stores
+ *    a numeric weight (parsed as `double`).
+ * - If an edge does not contain `weightKey` or if the attribute is not a valid
+ *   number, that edge is skipped.
+ * Returns the sequence of node IDs [start, ..., target].
+ * Returns an empty vector if no path exists (or if start/target missing).
+ */
+std::vector<std::string> dijkstra(
+    const Graph& g,
+    const std::string& start,
+    const std::string& target,
+    const std::string& weightKey);
+
+
+
 }  // namespace algorithms
 }  // namespace graph
 }  // namespace chronograph
