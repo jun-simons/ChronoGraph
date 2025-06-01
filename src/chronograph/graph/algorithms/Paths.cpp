@@ -245,78 +245,85 @@ std::vector<std::string> dijkstra(
     const std::string& target,
     const std::string& weightKey)
 {
-    const auto& adj  = g.getOutgoing();
-    const auto& allEdges = g.getEdges();
+    const auto& adjAll    = g.getOutgoing();
+    const auto& allEdges  = g.getEdges();
+    const auto& allNodes  = g.getNodes();
 
-    // if start/target dont exist, no path
-    if (adj.find(start) == adj.end() ||
-        adj.find(target) == adj.end()) {
+    // 1) Make sure both start and target exist as nodes.
+    if (allNodes.find(start) == allNodes.end() ||
+        allNodes.find(target) == allNodes.end()) {
         return {};
     }
 
-    // Min‐heap: (distance_so_far, nodeID)
+    // 2) Min‐heap of (distance_so_far, nodeID)
     using DistNode = std::pair<double, std::string>;
     struct Compare {
         bool operator()(DistNode const &a, DistNode const &b) const {
-            return a.first > b.first; // min‐heap
+            return a.first > b.first; // we want the smallest distance at top
         }
     };
     std::priority_queue<DistNode,
                         std::vector<DistNode>,
                         Compare> pq;
 
-    // Distances + predecessor map
+    // 3) Distance map & parent map
     std::unordered_map<std::string, double> dist;
     std::unordered_map<std::string, std::string> parent;
 
-    // Initialize dists to infinity
-    for (auto const& [node, _] : adj) {
-        dist[node] = std::numeric_limits<double>::infinity();
+    // Initialize distances to +∞ for every node
+    for (auto const& [nid, _] : allNodes) {
+        dist[nid] = std::numeric_limits<double>::infinity();
     }
     dist[start] = 0.0;
     pq.push({0.0, start});
 
-    // 4) Dijkstra loop
+    // 4) The Dijkstra loop
     while (!pq.empty()) {
         auto [d_u, u] = pq.top();
         pq.pop();
-        // if stale entry, skip
+
+        // If this entry is stale, skip it
         if (d_u > dist[u]) continue;
-        // target is reached
+
+        // Early exit if we reached target
         if (u == target) break;
 
-        // for each neighbor v of u
-        auto itU = adj.find(u);
-        if (itU == adj.end()) continue;  // no outgoing edges
-        for (auto const& v : itU->second) {
-            // Find the edge(s) from u→v in allEdges
-            double edgeWeight = std::numeric_limits<double>::infinity();
-            bool foundValidWeight = false;
+        // Fetch neighbors of u (if any). If none, treat as empty list.
+        auto itU = adjAll.find(u);
+        if (itU == adjAll.end()) {
+            // No outgoing edges → nothing to relax.
+            continue;
+        }
 
-            // scan all edges to find one whose from==u and to==v 
-            // If multiple edges exist pick smallest weight
+        for (auto const& v : itU->second) {
+            // We need to find the minimum weight among all edges from u→v
+            double bestWeight = std::numeric_limits<double>::infinity();
+            bool   foundValid = false;
+
+            // Scan every edge in allEdges
             for (auto const& [eid, e] : allEdges) {
                 if (e.from == u && e.to == v) {
-                    auto attrIt = e.attributes.find(weightKey);
-                    if (attrIt == e.attributes.end()) continue;
-                    // parse as double
+                    auto lit = e.attributes.find(weightKey);
+                    if (lit == e.attributes.end()) continue;
+
+                    // Try parsing the attribute string into a double
                     double w = std::nan("");
-                    std::istringstream iss(attrIt->second);
+                    std::istringstream iss(lit->second);
                     iss >> w;
                     if (iss.fail() || std::isnan(w)) continue;
-                    // keep the minimum if multiple edges from u→v
-                    if (!foundValidWeight || w < edgeWeight) {
-                        edgeWeight = w;
-                        foundValidWeight = true;
+
+                    // If multiple edges u→v exist, pick the smallest numeric weight
+                    if (!foundValid || w < bestWeight) {
+                        bestWeight = w;
+                        foundValid = true;
                     }
                 }
             }
-            if (!foundValidWeight) {
-                // skip this neighbor (no valid weight)
-                continue;
-            }
 
-            double d_v = d_u + edgeWeight;
+            // If we never found a parsable weight for ANY edge u→v, skip this neighbor
+            if (!foundValid) continue;
+
+            double d_v = d_u + bestWeight;
             if (d_v < dist[v]) {
                 dist[v] = d_v;
                 parent[v] = u;
@@ -325,12 +332,12 @@ std::vector<std::string> dijkstra(
         }
     }
 
-    // still infinity distance 
+    // 5) If target was never reached (distance still ∞), return empty
     if (dist[target] == std::numeric_limits<double>::infinity()) {
         return {};
     }
 
-    // walk parents backward to find path
+    // 6) Reconstruct the path by walking parent[] backwards
     std::vector<std::string> path;
     for (std::string cur = target; ; ) {
         path.push_back(cur);

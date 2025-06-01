@@ -1,4 +1,4 @@
-# src/chronograph/graph/algorithms/utils/CMakeLists.txt
+# src/chronograph/graph/utils/CMakeLists.txt
 
 # Collect our implementation file(s)
 set(VISUAL_SOURCES
