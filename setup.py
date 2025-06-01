@@ -73,11 +73,12 @@ class CMakeBuild(build_ext):
             cwd=build_temp
         )
 
+version = "0.1.0"
 setup(
     name="chronograph",
     version=version,
-    author="Your Name",
-    author_email="you@example.com",
+    author="Jun Simons",
+    author_email="jdsimons017@gmail.com",
     description="ChronoGraph: a temporal & versioned C++ graph library with Git‐style repo support",
     long_description="",
     license="MIT",
@@ -86,14 +87,14 @@ setup(
         "Programming Language :: Python",
         "License :: OSI Approved :: MIT License"
     ],
-    # We do not have any pure‐Python modules; the extension itself is 'chronograph'
+    # no pure‐Python modules; extension itself is 'chronograph'
     ext_modules=[CMakeExtension("chronograph", sourcedir=".")],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,
-    # If you ever add pure‐Python subpackages, list them here, or use packages=find_packages()
+    # pure‐Python subpackages would og here (or use packages=find_packages())
     packages=[],
     install_requires=[
-        # any pure‐Python runtime dependencies, e.g. "graphviz>=0.20.1"
+        # pure Python runtime dependencies, e.g. "graphviz>=0.20.1"
     ],
     python_requires=">=3.8",
 )
