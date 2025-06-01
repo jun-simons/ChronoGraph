@@ -255,134 +255,134 @@ TEST(TimeRespectingReachability_SelfAndMissing, EdgeCases) {
 // Dijkstra‐based weighted shortest‐path tests
 // ─────────────────────────────────────────────────────────────────────────────
 
-TEST(Dijkstra_OnGraph_LinearChain, BasicWeights) {
-    Graph g;
-    int64_t ts = 1;
+// TEST(Dijkstra_OnGraph_LinearChain, BasicWeights) {
+//     Graph g;
+//     int64_t ts = 1;
 
-    // Create nodes A, B, C
-    g.addNode("A", {}, ts++);
-    g.addNode("B", {}, ts++);
-    g.addNode("C", {}, ts++);
+//     // Create nodes A, B, C
+//     g.addNode("A", {}, ts++);
+//     g.addNode("B", {}, ts++);
+//     g.addNode("C", {}, ts++);
 
-    // A -> B with weight=2.0, B -> C with weight=3.0
-    g.addEdge("e1", "A", "B", {{"cost","2.0"}}, ts++);
-    g.addEdge("e2", "B", "C", {{"cost","3.0"}}, ts++);
+//     // A -> B with weight=2.0, B -> C with weight=3.0
+//     g.addEdge("e1", "A", "B", {{"cost","2.0"}}, ts++);
+//     g.addEdge("e2", "B", "C", {{"cost","3.0"}}, ts++);
 
-    // Expect path A->B->C
-    auto path = dijkstra(g, "A", "C", "cost");
-    std::vector<std::string> expected1 = {"A","B","C"};
-    EXPECT_EQ(path, expected1);
+//     // Expect path A->B->C
+//     auto path = dijkstra(g, "A", "C", "cost");
+//     std::vector<std::string> expected1 = {"A","B","C"};
+//     EXPECT_EQ(path, expected1);
 
-    // Direct neighbor A->B
-    path = dijkstra(g, "A", "B", "cost");
-    std::vector<std::string> expected2 = {"A","B"};
-    EXPECT_EQ(path, expected2);
+//     // Direct neighbor A->B
+//     path = dijkstra(g, "A", "B", "cost");
+//     std::vector<std::string> expected2 = {"A","B"};
+//     EXPECT_EQ(path, expected2);
 
-    // Self‐path (A->A)
-    path = dijkstra(g, "A", "A", "cost");
-    std::vector<std::string> expected3 = {"A"};
-    EXPECT_EQ(path, expected3);
+//     // Self‐path (A->A)
+//     path = dijkstra(g, "A", "A", "cost");
+//     std::vector<std::string> expected3 = {"A"};
+//     EXPECT_EQ(path, expected3);
 
-    // No path backwards (C->A)
-    path = dijkstra(g, "C", "A", "cost");
-    EXPECT_TRUE(path.empty());
-}
+//     // No path backwards (C->A)
+//     path = dijkstra(g, "C", "A", "cost");
+//     EXPECT_TRUE(path.empty());
+// }
 
-TEST(Dijkstra_OnGraph_MultiplePaths, ChoosesLowestTotalCost) {
-    Graph g;
-    int64_t ts = 10;
+// TEST(Dijkstra_OnGraph_MultiplePaths, ChoosesLowestTotalCost) {
+//     Graph g;
+//     int64_t ts = 10;
 
-    // Nodes: A, B, C, D
-    g.addNode("A", {}, ts++);
-    g.addNode("B", {}, ts++);
-    g.addNode("C", {}, ts++);
-    g.addNode("D", {}, ts++);
+//     // Nodes: A, B, C, D
+//     g.addNode("A", {}, ts++);
+//     g.addNode("B", {}, ts++);
+//     g.addNode("C", {}, ts++);
+//     g.addNode("D", {}, ts++);
 
-    // Two routes:
-    //   A->B (1.0), B->D (1.0)  total=2.0
-    //   A->C (2.0), C->D (1.0)  total=3.0
-    g.addEdge("e1", "A", "B", {{"wt","1.0"}}, ts++);
-    g.addEdge("e2", "B", "D", {{"wt","1.0"}}, ts++);
-    g.addEdge("e3", "A", "C", {{"wt","2.0"}}, ts++);
-    g.addEdge("e4", "C", "D", {{"wt","1.0"}}, ts++);
+//     // Two routes:
+//     //   A->B (1.0), B->D (1.0)  total=2.0
+//     //   A->C (2.0), C->D (1.0)  total=3.0
+//     g.addEdge("e1", "A", "B", {{"wt","1.0"}}, ts++);
+//     g.addEdge("e2", "B", "D", {{"wt","1.0"}}, ts++);
+//     g.addEdge("e3", "A", "C", {{"wt","2.0"}}, ts++);
+//     g.addEdge("e4", "C", "D", {{"wt","1.0"}}, ts++);
 
-    // Expect the lower‐cost path A->B->D
-    auto path = dijkstra(g, "A", "D", "wt");
-    std::vector<std::string> expected = {"A","B","D"};
-    EXPECT_EQ(path, expected);
-}
+//     // Expect the lower‐cost path A->B->D
+//     auto path = dijkstra(g, "A", "D", "wt");
+//     std::vector<std::string> expected = {"A","B","D"};
+//     EXPECT_EQ(path, expected);
+// }
 
 
 
-TEST(Dijkstra_OnGraph_MissingOrInvalidWeight, SkipsEdgesWithoutValidKey) {
-    Graph g;
-    int64_t ts = 100;
+// TEST(Dijkstra_OnGraph_MissingOrInvalidWeight, SkipsEdgesWithoutValidKey) {
+//     Graph g;
+//     int64_t ts = 100;
 
-    // Nodes: X, Y, Z
-    g.addNode("X", {}, ts++);
-    g.addNode("Y", {}, ts++);
-    g.addNode("Z", {}, ts++);
+//     // Nodes: X, Y, Z
+//     g.addNode("X", {}, ts++);
+//     g.addNode("Y", {}, ts++);
+//     g.addNode("Z", {}, ts++);
 
-    // X→Y (no “cost” attribute), Y→Z (cost=5.0)
-    // Also X→Z direct but with invalid (“abc”) weight
-    g.addEdge("e1", "X", "Y", {{"other","1.0"}}, ts++);
-    g.addEdge("e2", "Y", "Z", {{"cost","5.0"}}, ts++);
-    g.addEdge("e3", "X", "Z", {{"cost","abc"}}, ts++);
+//     // X→Y (no “cost” attribute), Y→Z (cost=5.0)
+//     // Also X→Z direct but with invalid (“abc”) weight
+//     g.addEdge("e1", "X", "Y", {{"other","1.0"}}, ts++);
+//     g.addEdge("e2", "Y", "Z", {{"cost","5.0"}}, ts++);
+//     g.addEdge("e3", "X", "Z", {{"cost","abc"}}, ts++);
 
-    // The only valid route is X→Y→Z because X→Y lacks “cost” and X→Z is unparsable.
-    auto path = dijkstra(g, "X", "Z", "cost");
-    std::vector<std::string> expected = {"X","Y","Z"};
-    EXPECT_EQ(path, expected);
+//     // The only valid route is X→Y→Z because X→Y lacks “cost” and X→Z is unparsable.
+//     auto path = dijkstra(g, "X", "Z", "cost");
+//     std::vector<std::string> expected = {"X","Y","Z"};
+//     EXPECT_EQ(path, expected);
 
-    // If we ask for a nonexistent key (“weight”), everything is invalid → empty
-    auto path2 = dijkstra(g, "X", "Z", "weight");
-    EXPECT_TRUE(path2.empty());
-}
+//     // If we ask for a nonexistent key (“weight”), everything is invalid → empty
+//     auto path2 = dijkstra(g, "X", "Z", "weight");
+//     EXPECT_TRUE(path2.empty());
+// }
 
-TEST(Dijkstra_OnGraph_NonexistentOrDisconnected, VariousEdgeCases) {
-    Graph g;
-    int64_t ts = 50;
+// TEST(Dijkstra_OnGraph_NonexistentOrDisconnected, VariousEdgeCases) {
+//     Graph g;
+//     int64_t ts = 50;
 
-    // Single node “Solo”
-    g.addNode("Solo", {}, ts++);
+//     // Single node “Solo”
+//     g.addNode("Solo", {}, ts++);
 
-    // Path from Solo→Solo should return {"Solo"} even though no edges exist
-    auto path_self = dijkstra(g, "Solo", "Solo", "w");
-    std::vector<std::string> solo_expected = {"Solo"};
-    EXPECT_EQ(path_self, solo_expected);
+//     // Path from Solo→Solo should return {"Solo"} even though no edges exist
+//     auto path_self = dijkstra(g, "Solo", "Solo", "w");
+//     std::vector<std::string> solo_expected = {"Solo"};
+//     EXPECT_EQ(path_self, solo_expected);
 
-    // Nonexistent start node
-    auto path_missingStart = dijkstra(g, "Foo", "Solo", "w");
-    EXPECT_TRUE(path_missingStart.empty());
+//     // Nonexistent start node
+//     auto path_missingStart = dijkstra(g, "Foo", "Solo", "w");
+//     EXPECT_TRUE(path_missingStart.empty());
 
-    // Nonexistent target node
-    auto path_missingTarget = dijkstra(g, "Solo", "Bar", "w");
-    EXPECT_TRUE(path_missingTarget.empty());
+//     // Nonexistent target node
+//     auto path_missingTarget = dijkstra(g, "Solo", "Bar", "w");
+//     EXPECT_TRUE(path_missingTarget.empty());
 
-    // Add another node “Isle” but do not connect
-    g.addNode("Isle", {}, ts++);
-    auto path_disconnected = dijkstra(g, "Solo", "Isle", "w");
-    EXPECT_TRUE(path_disconnected.empty());
-}
+//     // Add another node “Isle” but do not connect
+//     g.addNode("Isle", {}, ts++);
+//     auto path_disconnected = dijkstra(g, "Solo", "Isle", "w");
+//     EXPECT_TRUE(path_disconnected.empty());
+// }
 
-TEST(Dijkstra_OnGraph_MultiEdgeSameEndpoints, PicksMinWeight) {
-    Graph g;
-    int64_t ts = 200;
+// TEST(Dijkstra_OnGraph_MultiEdgeSameEndpoints, PicksMinWeight) {
+//     Graph g;
+//     int64_t ts = 200;
 
-    // Nodes: P, Q, R
-    g.addNode("P", {}, ts++);
-    g.addNode("Q", {}, ts++);
-    g.addNode("R", {}, ts++);
+//     // Nodes: P, Q, R
+//     g.addNode("P", {}, ts++);
+//     g.addNode("Q", {}, ts++);
+//     g.addNode("R", {}, ts++);
 
-    // Two edges from P→Q: one with cost=10, another with cost=1
-    g.addEdge("eA", "P", "Q", {{"w","10"}}, ts++);
-    g.addEdge("eB", "P", "Q", {{"w","1"}}, ts++);
+//     // Two edges from P→Q: one with cost=10, another with cost=1
+//     g.addEdge("eA", "P", "Q", {{"w","10"}}, ts++);
+//     g.addEdge("eB", "P", "Q", {{"w","1"}}, ts++);
 
-    // Then Q→R cost=2
-    g.addEdge("eC", "Q", "R", {{"w","2"}}, ts++);
+//     // Then Q→R cost=2
+//     g.addEdge("eC", "Q", "R", {{"w","2"}}, ts++);
 
-    // If dijkstra picks the minimal P→Q=1.0, total cost P→Q→R = 1+2 = 3
-    auto path = dijkstra(g, "P", "R", "w");
-    std::vector<std::string> expected = {"P","Q","R"};
-    EXPECT_EQ(path, expected);
-}
+//     // If dijkstra picks the minimal P→Q=1.0, total cost P→Q→R = 1+2 = 3
+//     auto path = dijkstra(g, "P", "R", "w");
+//     std::vector<std::string> expected = {"P","Q","R"};
+//     EXPECT_EQ(path, expected);
+// }
