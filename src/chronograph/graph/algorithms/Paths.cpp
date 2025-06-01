@@ -5,6 +5,9 @@
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
+#include <sstream>
+#include <cmath>
+#include <utility>
 
 
 namespace chronograph {
@@ -234,6 +237,108 @@ bool isTimeRespectingReachable(const Graph& g,
     }
 
     return false;
+}
+
+std::vector<std::string> dijkstra(
+    const Graph&       g,
+    const std::string& start,
+    const std::string& target,
+    const std::string& weightKey)
+{
+    const auto& adj  = g.getOutgoing();
+    const auto& allEdges = g.getEdges();
+
+    // if start/target dont exist, no path
+    if (adj.find(start) == adj.end() ||
+        adj.find(target) == adj.end()) {
+        return {};
+    }
+
+    // Min‐heap: (distance_so_far, nodeID)
+    using DistNode = std::pair<double, std::string>;
+    struct Compare {
+        bool operator()(DistNode const &a, DistNode const &b) const {
+            return a.first > b.first; // min‐heap
+        }
+    };
+    std::priority_queue<DistNode,
+                        std::vector<DistNode>,
+                        Compare> pq;
+
+    // Distances + predecessor map
+    std::unordered_map<std::string, double> dist;
+    std::unordered_map<std::string, std::string> parent;
+
+    // Initialize dists to infinity
+    for (auto const& [node, _] : adj) {
+        dist[node] = std::numeric_limits<double>::infinity();
+    }
+    dist[start] = 0.0;
+    pq.push({0.0, start});
+
+    // 4) Dijkstra loop
+    while (!pq.empty()) {
+        auto [d_u, u] = pq.top();
+        pq.pop();
+        // if stale entry, skip
+        if (d_u > dist[u]) continue;
+        // target is reached
+        if (u == target) break;
+
+        // for each neighbor v of u
+        auto itU = adj.find(u);
+        if (itU == adj.end()) continue;  // no outgoing edges
+        for (auto const& v : itU->second) {
+            // Find the edge(s) from u→v in allEdges
+            double edgeWeight = std::numeric_limits<double>::infinity();
+            bool foundValidWeight = false;
+
+            // scan all edges to find one whose from==u and to==v 
+            // If multiple edges exist pick smallest weight
+            for (auto const& [eid, e] : allEdges) {
+                if (e.from == u && e.to == v) {
+                    auto attrIt = e.attributes.find(weightKey);
+                    if (attrIt == e.attributes.end()) continue;
+                    // parse as double
+                    double w = std::nan("");
+                    std::istringstream iss(attrIt->second);
+                    iss >> w;
+                    if (iss.fail() || std::isnan(w)) continue;
+                    // keep the minimum if multiple edges from u→v
+                    if (!foundValidWeight || w < edgeWeight) {
+                        edgeWeight = w;
+                        foundValidWeight = true;
+                    }
+                }
+            }
+            if (!foundValidWeight) {
+                // skip this neighbor (no valid weight)
+                continue;
+            }
+
+            double d_v = d_u + edgeWeight;
+            if (d_v < dist[v]) {
+                dist[v] = d_v;
+                parent[v] = u;
+                pq.push({d_v, v});
+            }
+        }
+    }
+
+    // still infinity distance 
+    if (dist[target] == std::numeric_limits<double>::infinity()) {
+        return {};
+    }
+
+    // walk parents backward to find path
+    std::vector<std::string> path;
+    for (std::string cur = target; ; ) {
+        path.push_back(cur);
+        if (cur == start) break;
+        cur = parent[cur];
+    }
+    std::reverse(path.begin(), path.end());
+    return path;
 }
 
 
