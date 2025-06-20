@@ -97,7 +97,11 @@ if (chronograph::graph::algorithms::hasCycle(g)) {
   auto optOrder = chronograph::graph::algorithms::topologicalSort(g);
   for (auto& id : *optOrder) std::cout<<id<<" ";
 }
+
+// Since topologicalSort checks if a graph has a cycle, you can just use it on its own:
+auto optOrder2 = chronograph::graph::algorithms::topologicalSort(g);
 ```
+*Note*: topologicalSort will return `nullopt` if a cycle exists, otherwise it returns the ordered list
 
 ---
 
