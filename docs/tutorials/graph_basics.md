@@ -120,5 +120,5 @@ echo "$dot" > graph.dot
 dot -Tpng graph.dot -o graph.png
 ```
 ## 7. Next Steps
-- Learn about ChronoGraph repositories: [Repositories](repository_basics.md)
-- Try out **algorithms** (reachability, shortest-path) in [Algorithms](algorithms_basics.md)
+- Learn about ChronoGraph repositories: [Repository Basics](repository_basics.md)
+- Try out **algorithms** (reachability, shortest-path) in [Algorithm Basics](algorithm_basics.md)
