@@ -120,6 +120,5 @@ echo "$dot" > graph.dot
 dot -Tpng graph.dot -o graph.png
 ```
 ## 7. Next Steps
-- Learn about **snapshots** in [Time-Travel & Snapshots](algorithms.md)  
-- Explore **diffing**, **branches** & **merging** in the next tutorial  
+- Learn about ChronoGraph repositories: [Repositories](repository_basics.md)
 - Try out **algorithms** (reachability, shortest-path) in [Algorithms](algorithms_basics.md)
