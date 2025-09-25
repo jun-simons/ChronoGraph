@@ -7,7 +7,6 @@ A temporal, versioned graph library in C++17 with Git-like branching & merging, 
 > **Quick Links**
 > - [Installation](installation.md)
 > - [Quick Start](quick_start.md)
-> - [Tutorials](tutorials/index.md)
 > - [API Reference](api/index.md)
 > - [Examples](examples.md)
 
