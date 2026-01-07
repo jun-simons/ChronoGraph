@@ -25,9 +25,9 @@ int main() {
         g.addNode(id, {{"label", std::string(id)}}, ts++);
     }
 
-    // Edges: A→B, B→C, C→A (cycle);
-    // D→E, E→F, F→D (another cycle);
-    // C→D (bridge); G→H (singleton chain)
+    // Edges: A->B, B->C, C->A (cycle);
+    // D->E, E->F, F->D (another cycle);
+    // C->D (bridge); G->H (singleton chain)
     g.addEdge("e1","A","B",{}, ts++);
     g.addEdge("e2","B","C",{}, ts++);
     g.addEdge("e3","C","A",{}, ts++);
