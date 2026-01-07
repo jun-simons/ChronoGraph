@@ -2,7 +2,7 @@
 
 **Namespace:** `chronograph::graph::algorithms`  
 
-A collection of common graph algorithms operating on the in-memory `Graph` or on snapshots. All functions take a `const Graph&` (or snapshot) and return results—no need to manipulate adjacency maps yourself.
+A collection of common graph algorithms operating on the in-memory `Graph` or on snapshots. All functions take a `const Graph&` (or snapshot) and return results.
 
 ## Reachability
 
