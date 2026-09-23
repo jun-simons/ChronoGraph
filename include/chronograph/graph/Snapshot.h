@@ -6,8 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include  <chronograph/graph/Node.h>
-#include  <chronograph/graph/Edge.h>
+#include <chronograph/graph/GraphState.h>
 
 namespace chronograph {
 
@@ -16,24 +15,21 @@ class Graph;
 
 class Snapshot {
 public:
-    // Build snapshot by replaying events up to and including `timestamp`
+    // Build snapshot by replaying every event with timestamp <= `timestamp`
     Snapshot(const Graph& graph, std::int64_t timestamp);
 
     // Accessors for nodes and edges at this point in time
-    const std::unordered_map<std::string, Node>& getNodes() const { return nodes_; }
-    const std::unordered_map<std::string, Edge>& getEdges() const { return edges_; }
+    const std::unordered_map<std::string, Node>& getNodes() const { return state_.nodes; }
+    const std::unordered_map<std::string, Edge>& getEdges() const { return state_.edges; }
 
     // Access adjacency lists at this snapshot
     const std::unordered_map<std::string, std::vector<std::string>>&
-        getOutgoing() const { return outgoing_; }
+        getOutgoing() const { return state_.outgoing; }
     const std::unordered_map<std::string, std::vector<std::string>>&
-        getIncoming() const { return incoming_; }
+        getIncoming() const { return state_.incoming; }
 
 private:
-    std::unordered_map<std::string, Node> nodes_;
-    std::unordered_map<std::string, Edge> edges_;
-    std::unordered_map<std::string, std::vector<std::string>> outgoing_;
-    std::unordered_map<std::string, std::vector<std::string>> incoming_;
+    GraphState state_;
 };
 
 }  // namespace chronograph

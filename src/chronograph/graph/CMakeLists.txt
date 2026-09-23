@@ -3,6 +3,7 @@
 # Gather all the .cpp files for the core graph module
 set(GRAPH_SOURCES
     Graph.cpp
+    GraphState.cpp
     Snapshot.cpp
     # add any new graph‐related .cpp here
 )
@@ -14,22 +15,13 @@ target_include_directories(chronograph-graph
   ${CMAKE_SOURCE_DIR}/include
 )
 
-# --- algorithms submodule ---
-add_subdirectory(algorithms)
-target_link_libraries(chronograph-graph
-  PUBLIC
-    chronograph-graph-algo
-)
-
-# --- utils submodule ---
-add_subdirectory(utils)
-target_link_libraries(chronograph-graph
-  PUBLIC
-    chronograph-graph-utils
-)
-
 set_target_properties(chronograph-graph PROPERTIES
   CXX_STANDARD 17
   CXX_STANDARD_REQUIRED YES
   CXX_EXTENSIONS NO
 )
+
+# Submodules build on top of the core graph library (they link to it, not
+# the other way around)
+add_subdirectory(algorithms)
+add_subdirectory(utils)

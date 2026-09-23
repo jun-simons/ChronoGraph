@@ -5,14 +5,29 @@
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
-#include <sstream>
 #include <cmath>
+#include <cstdlib>
+#include <limits>
+#include <optional>
 #include <utility>
 
 
 namespace chronograph {
 namespace graph {
 namespace algorithms {
+
+namespace {
+    // Parse a whole attribute string as a finite, non-negative edge weight
+    std::optional<double> parseWeight(const std::string& s) {
+        const char* begin = s.c_str();
+        char* end = nullptr;
+        double w = std::strtod(begin, &end);
+        if (end == begin || *end != '\0' || !std::isfinite(w) || w < 0) {
+            return std::nullopt;
+        }
+        return w;
+    }
+} // anonymous
 
 bool isReachable(const Graph& g,
                  const std::string& start,
@@ -295,39 +310,24 @@ std::vector<std::string> dijkstra(
             continue;
         }
 
-        for (auto const& v : itU->second) {
-            // We need to find the minimum weight among all edges from u→v
-            double bestWeight = std::numeric_limits<double>::infinity();
-            bool   foundValid = false;
+        // Relax each outgoing edge. Parallel edges u->v are handled
+        // naturally: the cheapest one wins the relaxation.
+        for (auto const& eid : itU->second) {
+            auto eit = allEdges.find(eid);
+            if (eit == allEdges.end()) continue;
+            const Edge& e = eit->second;
 
-            // Scan every edge in allEdges
-            for (auto const& [eid, e] : allEdges) {
-                if (e.from == u && e.to == v) {
-                    auto lit = e.attributes.find(weightKey);
-                    if (lit == e.attributes.end()) continue;
+            auto wit = e.attributes.find(weightKey);
+            if (wit == e.attributes.end()) continue;
+            auto w = parseWeight(wit->second);
+            if (!w) continue;
 
-                    // Try parsing the attribute string into a double
-                    double w = std::nan("");
-                    std::istringstream iss(lit->second);
-                    iss >> w;
-                    if (iss.fail() || std::isnan(w)) continue;
-
-                    // If multiple edges u→v exist, pick the smallest numeric weight
-                    if (!foundValid || w < bestWeight) {
-                        bestWeight = w;
-                        foundValid = true;
-                    }
-                }
-            }
-
-            // If we never found a parsable weight for ANY edge u→v, skip this neighbor
-            if (!foundValid) continue;
-
-            double d_v = d_u + bestWeight;
-            if (d_v < dist[v]) {
-                dist[v] = d_v;
-                parent[v] = u;
-                pq.push({d_v, v});
+            double d_v = d_u + *w;
+            auto dit = dist.find(e.to);
+            if (dit != dist.end() && d_v < dit->second) {
+                dit->second = d_v;
+                parent[e.to] = u;
+                pq.push({d_v, e.to});
             }
         }
     }

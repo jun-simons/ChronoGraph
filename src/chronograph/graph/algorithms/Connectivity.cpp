@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <functional>
 
 namespace chronograph {
 namespace graph {
@@ -68,57 +69,6 @@ weaklyConnectedComponents(const Graph& g) {
     }
 
     return components;
-}
-
-static void tarjanDFS(const Graph& g,
-    const std::string& v,
-    int& index,
-    std::unordered_map<std::string,int>& indexes,
-    std::unordered_map<std::string,int>& lowlinks,
-    std::vector<std::string>& stack,
-    std::unordered_set<std::string>& onStack,
-    std::vector<std::vector<std::string>>& comps)
-    {
-    indexes[v] = index;
-    lowlinks[v] = index;
-    ++index;
-
-    stack.push_back(v);
-    onStack.insert(v);
-
-    // For each neighbor w of v
-    const auto& out = g.getOutgoing();
-    const auto& edges = g.getEdges();
-    auto oit = out.find(v);
-    if (oit != out.end()) {
-        for (const auto& eid : oit->second) {
-            auto eit = edges.find(eid);
-            if (eit == edges.end()) continue;
-            const auto& w = eit->second.to;
-
-            if (!indexes.count(w)) {
-            // not visited
-                tarjanDFS(g, w, index, indexes, lowlinks, stack, onStack, comps);
-                lowlinks[v] = std::min(lowlinks[v], lowlinks[w]);
-            }
-            else if (onStack.count(w)) {
-                lowlinks[v] = std::min(lowlinks[v], indexes[w]);
-            }
-        }
-    }
-
-    // If v is a root node, pop the stack and generate an SCC
-    if (lowlinks[v] == indexes[v]) {
-        std::vector<std::string> comp;
-        while (true) {
-            std::string w = stack.back();
-            stack.pop_back();
-            onStack.erase(w);
-            comp.push_back(std::move(w));
-            if (w == v) break;
-        }
-        comps.push_back(std::move(comp));
-    }
 }
 
 std::vector<std::vector<std::string>>

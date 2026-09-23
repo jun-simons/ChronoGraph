@@ -73,7 +73,12 @@ public:
     /// Create a new branch at the current HEAD commit
     void branch(const std::string& branchName);
 
-    /// Switch HEAD to the tip of `branchName`, rebuilding the working graph
+    /// True if the working graph has events that haven't been committed yet
+    bool hasUncommittedChanges() const;
+
+    /// Switch HEAD to the tip of `branchName`, rebuilding the working graph.
+    /// Throws std::runtime_error if the branch doesn't exist, or if there are
+    /// uncommitted changes and the branch points at a different commit.
     void checkout(const std::string& branchName);
 
     /// List all branch names
@@ -89,6 +94,8 @@ public:
      * Merge `branchName` into the current HEAD branch.
      * - policy: automatic resolution strategy
      * - in INTERACTIVE mode, conflicts are returned for manual resolution
+     * Throws std::runtime_error if the branch doesn't exist or there are
+     * uncommitted changes.
      */
     MergeResult merge(const std::string& branchName,
                     MergePolicy policy = MergePolicy::OURS);
@@ -110,6 +117,15 @@ private:
 
     // how many events have been committed into parents already
     size_t lastCommittedEventIndex_;
+
+    // Commits from the root to `cid`, following first parents. Each commit's
+    // events are its delta against its first parent, so replaying this chain
+    // reproduces the graph at `cid`.
+    std::vector<std::string> firstParentChain(const std::string& cid) const;
+
+    // Point HEAD_commitId_ at `target` and bring the working graph in line with
+    // it (replaying only the missing commits when possible)
+    void moveHeadTo(const std::string& target);
 
     // helper to gather ancestors in topological order
     void buildAncestors(const std::string& cid,

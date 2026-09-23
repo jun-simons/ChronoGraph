@@ -1,7 +1,7 @@
 # src/chronograph/graph/algorithms/CMakeLists.txt
 
 # Grab all .cpp in this folder
-file(GLOB ALGO_SOURCES "*.cpp")
+file(GLOB ALGO_SOURCES CONFIGURE_DEPENDS "*.cpp")
 
 add_library(chronograph-graph-algo STATIC ${ALGO_SOURCES})
 
@@ -11,8 +11,10 @@ target_include_directories(chronograph-graph-algo
     ${CMAKE_SOURCE_DIR}/include
 )
 
-# It doesn’t depend on anything else in Graph besides the headers,
-# so no extra target_link_libraries() needed.
+target_link_libraries(chronograph-graph-algo
+  PUBLIC
+    chronograph-graph
+)
 
 set_target_properties(chronograph-graph-algo PROPERTIES
   CXX_STANDARD 17

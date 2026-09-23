@@ -50,8 +50,8 @@ bool isTimeRespectingReachable(const Graph& g,
  * Compute a weighted shortest path from `start` to `target` in `g`.
  * - `weightKey` is the attribute name in each Edge::attributes map that stores
  *    a numeric weight (parsed as `double`).
- * - If an edge does not contain `weightKey` or if the attribute is not a valid
- *   number, that edge is skipped.
+ * - If an edge does not contain `weightKey`, or the attribute is not a valid
+ *   non-negative number, that edge is skipped.
  * Returns the sequence of node IDs [start, ..., target].
  * Returns an empty vector if no path exists (or if start/target missing).
  */
