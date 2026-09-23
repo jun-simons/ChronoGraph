@@ -27,4 +27,11 @@ struct Event {
     std::string to;
 };
 
+inline bool operator==(const Event& a, const Event& b) {
+    return a.id == b.id && a.timestamp == b.timestamp && a.type == b.type &&
+           a.entityId == b.entityId && a.payload == b.payload &&
+           a.from == b.from && a.to == b.to;
+}
+inline bool operator!=(const Event& a, const Event& b) { return !(a == b); }
+
 }  // namespace chronograph

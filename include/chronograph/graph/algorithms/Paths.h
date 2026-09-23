@@ -8,14 +8,17 @@
 namespace chronograph {
 
 class Graph;
+class GraphView;
 
 namespace graph {
 namespace algorithms {
 
+// All algorithms accept any GraphView: a live Graph or a Snapshot of one.
+
 /**
  * Returns true if `target` is reachable from `start` in the given graph.
  */
-bool isReachable(const Graph& g,
+bool isReachable(const GraphView& g,
                  const std::string& start,
                  const std::string& target);
 
@@ -24,13 +27,13 @@ bool isReachable(const Graph& g,
  * Returns the sequence of node IDs [start, ..., target].
  * Empty vector if no path exists (or if either node is missing).
  */
-std::vector<std::string> shortestPath(const Graph& g,
+std::vector<std::string> shortestPath(const GraphView& g,
     const std::string& start,
     const std::string& target);
 
 /**
 * Returns true if `target` is reachable from `start` in `g` *as of* `timestamp`.
-* Internally takes a Snapshot at time T and runs reachability on that snapshot.
+* Shorthand for isReachable(Snapshot(g, timestamp), start, target).
 */
 bool isReachableAt(const Graph& g,
     const std::string& start,
@@ -41,7 +44,7 @@ bool isReachableAt(const Graph& g,
  * Returns true if `target` is reachable from `start` in the given graph,
  * considering only paths whose edge‐creation timestamps never decrease.
  */
-bool isTimeRespectingReachable(const Graph& g,
+bool isTimeRespectingReachable(const GraphView& g,
     const std::string& start,
     const std::string& target);
 
@@ -56,7 +59,7 @@ bool isTimeRespectingReachable(const Graph& g,
  * Returns an empty vector if no path exists (or if start/target missing).
  */
 std::vector<std::string> dijkstra(
-    const Graph& g,
+    const GraphView& g,
     const std::string& start,
     const std::string& target,
     const std::string& weightKey);

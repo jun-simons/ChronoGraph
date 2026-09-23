@@ -1,5 +1,6 @@
 #include <chronograph/graph/algorithms/Paths.h>
 #include <chronograph/graph/Graph.h>
+#include <chronograph/graph/Snapshot.h>
 #include <queue>
 #include <unordered_set>
 #include <unordered_map>
@@ -29,7 +30,7 @@ namespace {
     }
 } // anonymous
 
-bool isReachable(const Graph& g,
+bool isReachable(const GraphView& g,
                  const std::string& start,
                  const std::string& target)
 {
@@ -82,7 +83,7 @@ bool isReachable(const Graph& g,
     return false;
 }
 
-std::vector<std::string> shortestPath(const Graph& g,
+std::vector<std::string> shortestPath(const GraphView& g,
                                       const std::string& start,
                                       const std::string& target)
 {
@@ -156,45 +157,10 @@ bool isReachableAt(const Graph& g,
     const std::string& target,
     std::int64_t timestamp)
 {
-    // Build snapshot at T
-    Snapshot snap(g, timestamp);
-
-    // Use the same BFS logic, but on the snapshot
-    const auto& outEdges = snap.getOutgoing();
-    const auto& edges    = snap.getEdges();
-
-    if (start == target) {
-        return outEdges.find(start) != outEdges.end();
-    }
-    auto itStart = outEdges.find(start);
-    if (itStart == outEdges.end()) {
-        return false;
-    }
-
-    std::unordered_set<std::string> visited;
-    std::queue<std::string> q;
-    visited.insert(start);
-    q.push(start);
-
-    while (!q.empty()) {
-        const auto u = q.front(); q.pop();
-        auto oit = outEdges.find(u);
-        if (oit == outEdges.end()) continue;
-        for (const auto& eid : oit->second) {
-            auto eit = edges.find(eid);
-            if (eit == edges.end()) continue;
-            const auto& v = eit->second.to;
-            if (v == target) return true;
-            if (!visited.count(v)) {
-                visited.insert(v);
-                q.push(v);
-            }
-        }
-    }
-    return false;
+    return isReachable(Snapshot(g, timestamp), start, target);
 }
 
-bool isTimeRespectingReachable(const Graph& g,
+bool isTimeRespectingReachable(const GraphView& g,
     const std::string& start,
     const std::string& target)
 {
@@ -255,7 +221,7 @@ bool isTimeRespectingReachable(const Graph& g,
 }
 
 std::vector<std::string> dijkstra(
-    const Graph&       g,
+    const GraphView&       g,
     const std::string& start,
     const std::string& target,
     const std::string& weightKey)

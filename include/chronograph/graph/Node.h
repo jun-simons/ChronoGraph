@@ -11,4 +11,9 @@ struct Node {
     std::map<std::string, std::string> attributes;
 };
 
+inline bool operator==(const Node& a, const Node& b) {
+    return a.id == b.id && a.attributes == b.attributes;
+}
+inline bool operator!=(const Node& a, const Node& b) { return !(a == b); }
+
 }  // namespace chronograph

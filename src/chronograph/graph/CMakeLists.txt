@@ -2,9 +2,11 @@
 
 # Gather all the .cpp files for the core graph module
 set(GRAPH_SOURCES
+    Diff.cpp
     Graph.cpp
     GraphState.cpp
     Snapshot.cpp
+    Temporal.cpp
     # add any new graph‐related .cpp here
 )
 

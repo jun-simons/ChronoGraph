@@ -1,5 +1,5 @@
 #include <chronograph/graph/algorithms/Connectivity.h>
-#include <chronograph/graph/Graph.h>
+#include <chronograph/graph/GraphView.h>
 #include <queue>
 #include <unordered_set>
 #include <unordered_map>
@@ -13,7 +13,7 @@ namespace graph {
 namespace algorithms {
 
 std::vector<std::vector<std::string>>
-weaklyConnectedComponents(const Graph& g) {
+weaklyConnectedComponents(const GraphView& g) {
     // Grab adjacency in both directions
     const auto& out = g.getOutgoing();
     const auto& in  = g.getIncoming();
@@ -72,7 +72,7 @@ weaklyConnectedComponents(const Graph& g) {
 }
 
 std::vector<std::vector<std::string>>
-stronglyConnectedComponents(const Graph& g)
+stronglyConnectedComponents(const GraphView& g)
 {
     const auto& nodes = g.getNodes();
     const auto& out   = g.getOutgoing();
@@ -136,7 +136,7 @@ stronglyConnectedComponents(const Graph& g)
 
 // Directed cycle detection via DFS + recursion stack
 static bool dfsDetectCycle(
-    const Graph& g,
+    const GraphView& g,
     const std::string& u,
     std::unordered_map<std::string,int>& state  // 0=unseen,1=visiting,2=done
 ) {
@@ -168,7 +168,7 @@ static bool dfsDetectCycle(
     return false;
 }
 
-bool hasCycle(const Graph& g) {
+bool hasCycle(const GraphView& g) {
     const auto& nodes = g.getNodes();
     // track visitation state for each node
     std::unordered_map<std::string,int> state;
@@ -189,7 +189,7 @@ bool hasCycle(const Graph& g) {
 }
 
 std::optional<std::vector<std::string>>
-topologicalSort(const Graph& g)
+topologicalSort(const GraphView& g)
 {
     // 1) Gather all nodes and build in‐degree map
     const auto& nodes    = g.getNodes();

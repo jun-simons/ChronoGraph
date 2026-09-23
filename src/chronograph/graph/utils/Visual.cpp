@@ -1,5 +1,5 @@
 #include <chronograph/graph/utils/Visual.h>
-#include <chronograph/graph/Graph.h>
+#include <chronograph/graph/GraphView.h>
 #include <sstream>
 
 namespace chronograph {
@@ -7,7 +7,7 @@ namespace graph {
 namespace algorithms {
 namespace utils {
 
-std::string toDot(const Graph& g) {
+std::string toDot(const GraphView& g) {
     const auto& nodes     = g.getNodes();
     const auto& outEdges  = g.getOutgoing();
     const auto& edges     = g.getEdges();

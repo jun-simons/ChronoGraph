@@ -15,4 +15,10 @@ struct Edge {
     std::int64_t createdTimestamp = 0;  // timestamp of the ADD_EDGE event
 };
 
+inline bool operator==(const Edge& a, const Edge& b) {
+    return a.id == b.id && a.from == b.from && a.to == b.to &&
+           a.attributes == b.attributes && a.createdTimestamp == b.createdTimestamp;
+}
+inline bool operator!=(const Edge& a, const Edge& b) { return !(a == b); }
+
 }  // namespace chronograph

@@ -5,6 +5,8 @@
 #include <chronograph/graph/Node.h>
 #include <chronograph/graph/Edge.h>
 #include <chronograph/graph/GraphState.h>
+#include <chronograph/graph/GraphView.h>
+#include <chronograph/graph/Diff.h>
 #include <chronograph/graph/Snapshot.h>
 #include <cstdint>
 #include <limits>
@@ -16,7 +18,8 @@ namespace chronograph {
 
 /// Contains the core functionality for Graphs in ChronoGraph
 // * Handles nodes, edges, and events
-class Graph {
+// * Read accessors (getNodes, getEdges, ...) come from GraphView
+class Graph : public GraphView {
 public:
     Graph() = default;
 
@@ -55,24 +58,9 @@ public:
     };
     const std::vector<Checkpoint>& getCheckpoints() const;
 
-    struct DiffResult {
-        // Nodes
-        std::vector<Node> nodesAdded;
-        std::vector<std::string> nodesRemoved;
-        std::vector<std::pair<Node,Node>> nodesUpdated;   // {before, after}
-  
-        // Edges
-        std::vector<Edge> edgesAdded;
-        std::vector<std::string> edgesRemoved;
-        std::vector<std::pair<Edge,Edge>> edgesUpdated;   // {before, after}
-      };
+    using DiffResult = chronograph::DiffResult;
+    /// Changes between the graph's state at t1 and at t2
     DiffResult diff(std::int64_t t1, std::int64_t t2) const;
-
-    // Access current state
-    const std::unordered_map<std::string, Node>& getNodes() const;
-    const std::unordered_map<std::string, Edge>& getEdges() const;
-    const std::unordered_map<std::string, std::vector<std::string>>& getOutgoing() const;
-    const std::unordered_map<std::string, std::vector<std::string>>& getIncoming() const;
 
     // Clear state, event log and checkpoints
     void clearGraph();
@@ -81,8 +69,6 @@ private:
     // Append-only event history
     std::vector<Event> eventLog_;
 
-    // Live graph state (nodes, edges, adjacency)
-    GraphState state_;
     // Latest timestamp seen in eventLog_ (the log is not required to be sorted)
     std::int64_t maxTimestamp_ = std::numeric_limits<std::int64_t>::min();
 

@@ -6,7 +6,7 @@
 #include <optional>
 
 namespace chronograph {
-class Graph;
+class GraphView;
 
 namespace graph {
 namespace algorithms {
@@ -15,19 +15,19 @@ namespace algorithms {
 /// Treats edges as undirected. Returns a vector of components,
 /// each component is a list of node-IDs.
 std::vector<std::vector<std::string>>
-weaklyConnectedComponents(const Graph& g);
+weaklyConnectedComponents(const GraphView& g);
 
 /**
  * Compute the strongly‐connected components of a directed graph.
  * Returns a vector of components, each a list of node‐IDs.
  */
 std::vector<std::vector<std::string>>
-stronglyConnectedComponents(const Graph& g);
+stronglyConnectedComponents(const GraphView& g);
 
 /**
  * Return true if the directed graph contains any cycle.
  */
-bool hasCycle(const Graph& g);
+bool hasCycle(const GraphView& g);
 
 /**
  * Perform a topological sort of the directed graph.
@@ -35,7 +35,7 @@ bool hasCycle(const Graph& g);
  * If there is a cycle, returns std::nullopt.
  */
 std::optional<std::vector<std::string>>
-topologicalSort(const Graph& g);
+topologicalSort(const GraphView& g);
 
 
 }  // namespace algorithms
