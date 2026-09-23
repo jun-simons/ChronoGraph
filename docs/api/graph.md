@@ -2,6 +2,8 @@
 
 **Header:** `include/chronograph/graph/Graph.h`  
 
+`Graph` derives from [`GraphView`](snapshot.md), which supplies the read accessors (`getNodes`, `getEdges`, `getOutgoing`, `getIncoming`, `hasNode`, `hasEdge`).
+
 The `Graph` class provides event‐sourced mutators for nodes & edges, access to the live state and history, plus utility operations (snapshots, diffs, checkpoints).
 
 ## 1. Append‐Only Events
@@ -225,7 +227,7 @@ struct DiffResult {
 DiffResult diff(std::int64_t t1, std::int64_t t2) const;
 ```
 
-Compute changes between two timestamps:
+Compute changes between two timestamps (shorthand for `diff(Snapshot(g, t1), Snapshot(g, t2))`; see [Snapshots, Views & Diffs](snapshot.md)):
 
 - **Returns** a `DiffResult` grouping added/removed/updated nodes and edges.  
 - **Usage:**  

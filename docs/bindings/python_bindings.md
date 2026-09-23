@@ -93,13 +93,19 @@ print(e.from, e.to, e.attributes)
 
 ### `chronograph.Snapshot`
 
+`Graph` and `Snapshot` both derive from `chronograph.GraphView` (`get_nodes`, `get_edges`, `get_outgoing`, `get_incoming`, `has_node`, `has_edge`), so every algorithm accepts either one.
 
 ```python
 # view graph at a past timestamp
 snap = chronograph.Snapshot(g, timestamp=1234)
 current_nodes = snap.get_nodes()
-current_edges = snap.get_edges()
+alg.is_reachable(snap, "A", "B")          # algorithms work on snapshots
+changes = chronograph.diff(snap, g)       # DiffResult: nodes_added, edges_removed, ...
 ```
+
+### Temporal queries & saving
+
+See [Temporal Queries](../api/temporal.md#python) (`chronograph.temporal`) and [Saving & Loading](../api/io.md#python) (`save_repository`, `load_repository`, `FormatError`, …).
 
 
 ## 5. Algorithms

@@ -22,8 +22,10 @@ A temporal, versioned graph library in C++17 with Git-like branching & merging, 
   - [Algorithms](tutorials/algorithm_basics.md)
 - **API Reference**  
   - [Graph](api/graph.md)
-  - [Snapshot](api/snapshot.md)
+  - [Snapshots, Views & Diffs](api/snapshot.md)
+  - [Temporal Queries](api/temporal.md)
   - [Repository](api/repo.md)
+  - [Saving & Loading](api/io.md)
   - [Algorithms](api/algorithms.md)
   - [Utils](api/utils.md)
 - **Bindings**

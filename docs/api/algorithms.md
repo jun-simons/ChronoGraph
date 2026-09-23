@@ -2,7 +2,7 @@
 
 **Namespace:** `chronograph::graph::algorithms`  
 
-A collection of common graph algorithms operating on the in-memory `Graph` or on snapshots. All functions take a `const Graph&` (or snapshot) and return results.
+A collection of common graph algorithms. Every function takes a `const GraphView&`, so it runs on the live `Graph` or on a `Snapshot` of any point in time (see [Snapshots, Views & Diffs](snapshot.md)). Signatures below write `Graph` for brevity. The exception is `isReachableAt`, which needs the full `Graph` for its event log.
 
 ## Reachability
 

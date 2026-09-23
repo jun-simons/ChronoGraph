@@ -65,6 +65,8 @@ public:
     // staging mutators…
     // commit, branch, checkout, listBranches, listCommits, getCommitGraph, merge
     const Graph& graph() const;
+    // history: currentBranch, headCommit, getCommit, graphAt, diff
+    // persistence: exportData, fromData
 };
 ```
 
@@ -211,6 +213,31 @@ const Graph& graph() const;
   const auto& g = repo.graph();
   // use g.getNodes(), algorithms, snapshots, etc.
 ```
+
+## Inspecting History
+
+A **ref** is a branch name or a commit ID; branch names take precedence. Unknown refs throw `runtime_error`.
+
+```cpp
+const std::string& currentBranch() const;   // checked-out branch
+const std::string& headCommit() const;      // commit HEAD points at
+const Commit& getCommit(const std::string& commitId) const;
+
+Graph      graphAt(const std::string& ref) const;
+DiffResult diff(const std::string& fromRef, const std::string& toRef) const;
+```
+
+- `graphAt(ref)` rebuilds the **committed** graph at any branch or commit without touching `HEAD` or the working tree. The returned `Graph` carries that commit's full event log, so [snapshots](snapshot.md) and [temporal queries](temporal.md) work on it.
+- `diff(from, to)` compares the committed graphs at two refs, e.g. `repo.diff("main", "dev")`.
+
+```cpp
+auto changes = repo.diff("main", "feature");
+Snapshot lastWeek(repo.graphAt("main"), ts - 7 * 24 * 3600);
+```
+
+## Persistence
+
+See [Saving & Loading](io.md). `exportData()` / `fromData()` convert a repository to and from a plain `RepositoryData` struct, which is what the io layer (or your own storage) reads and writes.
 
 ---
 
