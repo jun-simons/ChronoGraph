@@ -42,3 +42,7 @@ __pycache__/
 venv/
 .venv/
 env/
+# Python packaging
+*.egg-info/
+.ipynb_checkpoints/
+.pytest_cache/

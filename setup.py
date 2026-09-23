@@ -47,7 +47,9 @@ class CMakeBuild(build_ext):
         # Common CMake arguments
         cmake_args = [
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}",
-            f"-DPYTHON_EXECUTABLE={sys.executable}",
+            f"-DPython_EXECUTABLE={sys.executable}",
+            "-DCHRONOGRAPH_BUILD_TESTS=OFF",
+            "-DCHRONOGRAPH_BUILD_EXAMPLES=OFF",
             f"-DCMAKE_BUILD_TYPE={cfg}"
         ]
 

@@ -9,9 +9,9 @@ The `Graph` class provides event‐sourced mutators for nodes & edges, access to
 ### `void addEvent(const Event& e);`
 
 - **Description:**  
-  Append a raw `Event` to the internal history without updating any state.  
+  Append a raw `Event` to the internal history and apply it to the live state. No validation is performed.  
 - **Use Case:**  
-  Low-level replay or applying events from another source.  
+  Low-level replay or applying events from another source (used by `Repository` on checkout/merge).  
 - **Parameters:**  
   - `e` – fully populated `Event` struct.  
 - **Returns:**  
@@ -24,6 +24,13 @@ void addEvent(const Event& e);
 ## 2. Mutators
 
 All mutators append a corresponding `Event` **and** update the live graph state immediately.
+
+Mutators validate their input and throw `std::invalid_argument` (Python: `ValueError`) — leaving the graph unchanged — when:
+- adding a node or edge whose ID already exists,
+- adding an edge whose `from` or `to` node doesn't exist,
+- deleting or updating a node/edge that doesn't exist.
+
+`delNode` records a `DEL_EDGE` event for every incident edge **before** its `DEL_NODE` event.
 
 ---
 
@@ -180,31 +187,25 @@ const std::vector<Event>& getEventLog() const;
 ### Checkpoints
 
 ```cpp
-struct Checkpoint { 
-    std::int64_t timestamp; 
-    size_t       eventIndex; 
-    std::unordered_map<std::string,Node> nodes; 
-    std::unordered_map<std::string,Edge> edges; 
-    std::unordered_map<std::string,std::vector<std::string>> outgoing, incoming;
+struct Checkpoint {
+    std::int64_t timestamp;   // latest timestamp among the events it covers
+    size_t       eventIndex;  // number of events folded into `state`
+    GraphState   state;       // nodes, edges, outgoing, incoming
 };
 
 const std::vector<Checkpoint>& getCheckpoints() const;
 ```
 - **Purpose:** Speed up snapshot construction.  
-- **`getCheckpoints()`** returns periodically‐saved states (every N events).
+- **`getCheckpoints()`** returns periodically‐saved states (every N events). A snapshot at time `T` starts from the latest checkpoint whose `timestamp <= T`.
 
 ## 4. Utilities
 
-### Applying & Clearing State
+### Clearing State
 
 ```cpp
-void applyEvent(const Event& e);
-void clearStateKeepLog();
 void clearGraph();
 ```
-- `applyEvent(e)` – update live state from event `e` without logging.
-- `clearStateKeepLog()` – wipe state but keep `eventLog_` (for replay).
-- `clearGraph()` – wipe both state and history.
+- `clearGraph()` – wipe state, history and checkpoints.
 
 
 ---

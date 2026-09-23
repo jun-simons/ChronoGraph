@@ -37,6 +37,28 @@ PYBIND11_MODULE(chronograph, m) {
         .def_readwrite("created_timestamp", &chronograph::Edge::createdTimestamp)
         ;
 
+    // --- Events ---
+    py::enum_<EventType>(m, "EventType")
+        .value("ADD_NODE",    EventType::ADD_NODE)
+        .value("DEL_NODE",    EventType::DEL_NODE)
+        .value("ADD_EDGE",    EventType::ADD_EDGE)
+        .value("DEL_EDGE",    EventType::DEL_EDGE)
+        .value("UPDATE_NODE", EventType::UPDATE_NODE)
+        .value("UPDATE_EDGE", EventType::UPDATE_EDGE);
+
+    py::class_<Event>(m, "Event")
+        .def_readonly("id",        &Event::id)
+        .def_readonly("timestamp", &Event::timestamp)
+        .def_readonly("type",      &Event::type)
+        .def_readonly("entity_id", &Event::entityId)
+        .def_readonly("payload",   &Event::payload)
+        .def_readonly("from_",     &Event::from)
+        .def_readonly("to",        &Event::to)
+        .def("__repr__", [](const Event& e) {
+            return "<Event " + py::repr(py::cast(e.type)).cast<std::string>() +
+                   " '" + e.entityId + "' @" + std::to_string(e.timestamp) + ">";
+        });
+
     // --- Graph ---
     py::class_<Graph>(m, "Graph")
         .def(py::init<>())
@@ -54,6 +76,8 @@ PYBIND11_MODULE(chronograph, m) {
         .def("get_nodes", &Graph::getNodes)
         .def("get_edges", &Graph::getEdges)
         .def("get_outgoing", &Graph::getOutgoing)
+        .def("get_incoming", &Graph::getIncoming)
+        .def("get_event_log", &Graph::getEventLog)
         ;
 
     // --- Snapshot ---
@@ -75,6 +99,8 @@ PYBIND11_MODULE(chronograph, m) {
           py::arg("g"), py::arg("start"), py::arg("target"), py::arg("timestamp"));
     alg.def("is_time_respecting_reachable", &graph::algorithms::isTimeRespectingReachable,
           py::arg("g"), py::arg("start"), py::arg("target"));
+    alg.def("dijkstra", &graph::algorithms::dijkstra,
+          py::arg("g"), py::arg("start"), py::arg("target"), py::arg("weight_key"));
     alg.def("weakly_connected_components", &graph::algorithms::weaklyConnectedComponents);
     alg.def("strongly_connected_components", &graph::algorithms::stronglyConnectedComponents);
     alg.def("has_cycle", &graph::algorithms::hasCycle);
@@ -90,27 +116,59 @@ PYBIND11_MODULE(chronograph, m) {
         .value("INTERACTIVE", MergePolicy::INTERACTIVE)
         .export_values();
 
-    py::class_<chronograph::Conflict>(m, "Conflict")
-        .def_readonly("kind",    &chronograph::Conflict::kind)
-        .def_readonly("ours",    &chronograph::Conflict::ours)
-        .def_readonly("theirs",  &chronograph::Conflict::theirs)
+    py::class_<Conflict> conflict(m, "Conflict");
+    py::enum_<Conflict::Kind>(conflict, "Kind")
+        .value("ADD_ADD",       Conflict::ADD_ADD)
+        .value("DEL_UPDATE",    Conflict::DEL_UPDATE)
+        .value("UPDATE_UPDATE", Conflict::UPDATE_UPDATE);
+    conflict
+        .def_readonly("kind",    &Conflict::kind)
+        .def_readonly("ours",    &Conflict::ours)
+        .def_readonly("theirs",  &Conflict::theirs)
         ;
 
-    py::class_<chronograph::MergeResult>(m, "MergeResult")
-        .def_readonly("merge_commit_id", &chronograph::MergeResult::mergeCommitId)
-        .def_readonly("conflicts",       &chronograph::MergeResult::conflicts)
+    py::class_<MergeResult>(m, "MergeResult")
+        .def_readonly("merge_commit_id", &MergeResult::mergeCommitId)
+        .def_readonly("conflicts",       &MergeResult::conflicts)
+        ;
+
+    py::class_<Commit>(m, "Commit")
+        .def_readonly("id",      &Commit::id)
+        .def_readonly("parents", &Commit::parents)
+        .def_readonly("events",  &Commit::events)
+        .def_readonly("message", &Commit::message)
+        .def("__repr__", [](const Commit& c) {
+            return "<Commit " + c.id + " '" + c.message + "'>";
+        });
+
+    py::class_<CommitGraph>(m, "CommitGraph")
+        .def_readonly("commit_ids", &CommitGraph::commitIds)
+        .def_readonly("parents",    &CommitGraph::parents)
+        .def_readonly("children",   &CommitGraph::children)
         ;
 
     py::class_<Repository>(m, "Repository")
         .def_static("init", &Repository::init, py::arg("root_branch") = "main")
-        .def("add_node", &Repository::addNode)
-        .def("add_edge", &Repository::addEdge)
+        .def("add_node", &Repository::addNode,
+             py::arg("id"), py::arg("attrs"), py::arg("timestamp"))
+        .def("del_node", &Repository::delNode, py::arg("id"), py::arg("timestamp"))
+        .def("update_node", &Repository::updateNode,
+             py::arg("id"), py::arg("attrs"), py::arg("timestamp"))
+        .def("add_edge", &Repository::addEdge,
+             py::arg("id"), py::arg("from"), py::arg("to"),
+             py::arg("attrs"), py::arg("timestamp"))
+        .def("del_edge", &Repository::delEdge, py::arg("id"), py::arg("timestamp"))
+        .def("update_edge", &Repository::updateEdge,
+             py::arg("id"), py::arg("attrs"), py::arg("timestamp"))
         .def("commit", &Repository::commit, py::arg("message") = "")
-        .def("branch", &Repository::branch)
-        .def("checkout", &Repository::checkout)
+        .def("has_uncommitted_changes", &Repository::hasUncommittedChanges)
+        .def("branch", &Repository::branch, py::arg("name"))
+        .def("checkout", &Repository::checkout, py::arg("branch"))
         .def("list_branches", &Repository::listBranches)
-        .def("list_commits", &Repository::listCommits)
-        .def("merge", &Repository::merge, py::arg("branch"), py::arg("policy"))
-        .def("graph", &Repository::graph, py::return_value_policy::reference)
+        .def("list_commits", &Repository::listCommits, py::arg("branch"))
+        .def("get_commit_graph", &Repository::getCommitGraph)
+        .def("merge", &Repository::merge,
+             py::arg("branch"), py::arg("policy") = MergePolicy::OURS)
+        .def("graph", &Repository::graph, py::return_value_policy::reference_internal)
         ;
 }
