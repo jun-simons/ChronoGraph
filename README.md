@@ -27,7 +27,7 @@ Chronograph can be used for social-network evolution, financial audit trails, co
   ChronoGraph provides a `Respository` object at the top level. Changes to the graph are committed and stored as `Commit` objects
 
 - **Branching & Merging**  
-  Graph repositories support branching, and fast-forward and three-way merges
+  Graph repositories support branching, fast-forward and three-way merges with per-attribute conflict detection, automatic merge policies, and interactive conflict resolution
 
 - **Saving & Loading**  
   Save graphs and whole repositories (including uncommitted work) to versioned, diff-friendly JSON

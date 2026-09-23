@@ -65,3 +65,37 @@ def test_commit_history_and_checkout_guard():
     assert repo.has_uncommitted_changes()
     with pytest.raises(RuntimeError):
         repo.checkout("main")
+
+
+def _diverged_repo():
+    repo = chronograph.Repository.init("main")
+    repo.add_node("n", {"k": "0"}, 1); repo.commit("base")
+    repo.branch("feat")
+    repo.update_node("n", {"k": "ours", "a": "1"}, 2); repo.commit("ours")
+    repo.checkout("feat")
+    repo.update_node("n", {"k": "theirs", "b": "1"}, 3); repo.commit("theirs")
+    repo.checkout("main")
+    return repo
+
+
+def test_merge_policy_reports_conflicts():
+    repo = _diverged_repo()
+    res = repo.merge("feat", MergePolicy.THEIRS)
+    [c] = res.conflicts
+    assert c.kind == chronograph.Conflict.Kind.UPDATE_UPDATE
+    assert c.entity == chronograph.Conflict.EntityKind.NODE
+    assert c.keys == ["k"]
+    assert c.ours.attributes["k"] == "ours"
+    assert repo.graph().get_nodes()["n"].attributes == {"k": "theirs", "a": "1", "b": "1"}
+
+
+def test_interactive_merge_flow():
+    repo = _diverged_repo()
+    res = repo.merge("feat", MergePolicy.INTERACTIVE)
+    assert res.merge_commit_id == "" and repo.is_merging()
+    for c in repo.merge_conflicts():
+        repo.resolve_conflict(c, chronograph.Resolution.THEIRS)
+    merge_id = repo.commit()
+    assert not repo.is_merging()
+    assert len(repo.get_commit(merge_id).parents) == 2
+    assert repo.graph().get_nodes()["n"]["k"] == "theirs"

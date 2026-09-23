@@ -1,5 +1,6 @@
 #include <chronograph/repo/Repository.h>
 #include <chronograph/graph/Snapshot.h>
+#include "MergePlanner.h"
 #include <algorithm>
 #include <random>
 #include <sstream>
@@ -79,30 +80,38 @@ workingGraph_.updateEdge(id, attrs, timestamp);
 
 // --- Commit staged events ---
 std::string Repository::commit(const std::string& message) {
-    const auto& log = workingGraph_.getEventLog();
-    size_t total = log.size();
-
-    // Nothing new to commit?
-    if (total <= lastCommittedEventIndex_) {
-        return HEAD_commitId_;
+    if (pendingMerge_) {
+        if (!pendingMerge_->unresolved.empty()) {
+            throw std::runtime_error(
+                "Cannot commit: " + std::to_string(pendingMerge_->unresolved.size()) +
+                " unresolved merge conflict(s)");
+        }
+        PendingMerge done = std::move(*pendingMerge_);
+        pendingMerge_.reset();
+        return createCommit({ HEAD_commitId_, done.theirsCommit },
+                            message.empty() ? done.message : message);
     }
 
-    // Slice out the new delta
-    std::vector<Event> delta(
-        log.begin() + lastCommittedEventIndex_,
-        log.end()
-    );
+    // Nothing new to commit?
+    if (!hasUncommittedChanges()) {
+        return HEAD_commitId_;
+    }
+    return createCommit({ HEAD_commitId_ }, message);
+}
 
-    // Make a commit (add to commits map)
+std::string Repository::createCommit(std::vector<std::string> parents,
+                                     const std::string& message) {
+    // The commit's delta: everything staged since the last commit
+    const auto& log = workingGraph_.getEventLog();
+    std::vector<Event> delta(log.begin() + lastCommittedEventIndex_, log.end());
+
     std::string newId = generateCommitId();
-    Commit c{ newId, { HEAD_commitId_ }, std::move(delta), message };
-    commits_.emplace(newId, c);
+    commits_.emplace(newId, Commit{ newId, std::move(parents), std::move(delta), message });
 
     // Advance branch & HEAD
     branches_[HEAD_] = newId;
     HEAD_commitId_ = newId;
-    lastCommittedEventIndex_ = total;
-
+    lastCommittedEventIndex_ = log.size();
     return newId;
 }
 
@@ -120,6 +129,9 @@ void Repository::checkout(const std::string& branchName) {
     auto it = branches_.find(branchName);
     if (it == branches_.end()) {
         throw std::runtime_error("Branch '" + branchName + "' does not exist");
+    }
+    if (pendingMerge_) {
+        throw std::runtime_error("Cannot checkout '" + branchName + "': merge in progress");
     }
     const std::string& target = it->second;
 
@@ -196,83 +208,84 @@ CommitGraph Repository::getCommitGraph() const {
 MergeResult Repository::merge(const std::string& branchName,
     MergePolicy policy)
 {
-    // 1) Locate the branch tip
     auto bit = branches_.find(branchName);
     if (bit == branches_.end()) {
         throw std::runtime_error("Branch '" + branchName + "' does not exist");
     }
+    if (pendingMerge_) {
+        throw std::runtime_error("Cannot merge '" + branchName + "': merge in progress");
+    }
     const std::string A = HEAD_commitId_;
     const std::string B = bit->second;
-
-    // 2) Trivial case: merging into itself
     if (A == B) {
         return MergeResult{ A, {} };
     }
-
     if (hasUncommittedChanges()) {
         throw std::runtime_error(
             "Cannot merge '" + branchName + "': uncommitted changes");
     }
 
-    // 3) Ancestors of our tip
-    std::vector<std::string> ancA;
-    std::unordered_set<std::string> setA;
-    buildAncestors(A, ancA, setA);
-
-    // 4) B already contained in A: nothing to do
-    if (setA.count(B)) {
+    // Already contained in HEAD: nothing to do
+    const auto ancA = ancestors(A);
+    if (ancA.count(B)) {
         return MergeResult{ A, {} };
     }
-
-    // 5) A is an ancestor of B: fast forward
-    std::vector<std::string> ancB;
-    std::unordered_set<std::string> setB;
-    buildAncestors(B, ancB, setB);
-    if (setB.count(A)) {
+    // HEAD is an ancestor of B: fast forward
+    const auto ancB = ancestors(B);
+    if (ancB.count(A)) {
         moveHeadTo(B);
         branches_[HEAD_] = B;
         return MergeResult{ B, {} };
     }
 
-    // 6) Three-way merge
-    // 6a) Base = most recent commit on B's first-parent chain that A also has.
-    //     The root is shared by every chain, so this always exists.
-    const auto chainB = firstParentChain(B);
-    auto baseIt = std::find_if(chainB.rbegin(), chainB.rend(),
-        [&](const std::string& cid) { return setA.count(cid) > 0; });
-    if (baseIt == chainB.rend()) {
-        throw std::runtime_error("No common ancestor found!");
+    // Three-way merge against the best common ancestor
+    auto plan = detail::planMerge(graphAt(mergeBase(ancA, ancB)), workingGraph_,
+                                  graphAt(B), policy);
+    workingGraph_ = std::move(plan.merged);
+    pendingMerge_ = PendingMerge{ B, "Merge branch '" + branchName + "' into " + HEAD_,
+                                  {}, plan.timestamp };
+
+    if (policy == MergePolicy::INTERACTIVE && !plan.conflicts.empty()) {
+        pendingMerge_->unresolved = plan.conflicts;
+        return MergeResult{ "", std::move(plan.conflicts) };
     }
+    return MergeResult{ commit(), std::move(plan.conflicts) };
+}
 
-    // 6b) Replay B's commits after the base onto the working tree (which is at A)
-    std::vector<Conflict> conflicts;
-    std::vector<Event>   mergedEvents;
-    for (auto it = chainB.begin() + (chainB.rend() - baseIt); it != chainB.end(); ++it) {
-        for (auto& e : commits_.at(*it).events) {
-            //TODO: detailed conflict population
-            bool conflict = false;
-            if (conflict && policy == MergePolicy::OURS) {
-            // skip applying
-            } else {
-            // either no conflict, or THEIRS/UNION
-                workingGraph_.addEvent(e);
-                mergedEvents.push_back(e);
-            }
-        }
+// ——— Interactive merges ———
+
+const std::vector<Conflict>& Repository::mergeConflicts() const {
+    static const std::vector<Conflict> none;
+    return pendingMerge_ ? pendingMerge_->unresolved : none;
+}
+
+void Repository::resolveConflict(const Conflict& conflict, Resolution resolution) {
+    if (!pendingMerge_) {
+        throw std::runtime_error("No merge in progress");
     }
+    auto& pending = pendingMerge_->unresolved;
+    auto it = std::find_if(pending.begin(), pending.end(), [&](const Conflict& c) {
+        return c.entity == conflict.entity && c.id == conflict.id;
+    });
+    if (it == pending.end()) {
+        throw std::invalid_argument("No unresolved conflict on " +
+            std::string(conflict.entity == Conflict::NODE ? "node '" : "edge '") +
+            conflict.id + "'");
+    }
+    // Use the stored conflict: the caller's copy may have been altered
+    detail::applyResolution(workingGraph_, *it, resolution, pendingMerge_->timestamp);
+    pending.erase(it);
+}
 
-    // 6c) Create the merge commit with two parents (A and B)
-    std::string mergeId = generateCommitId();
-    Commit m{ mergeId, { A, B }, std::move(mergedEvents),
-              "Merge branch '" + branchName + "' into " + HEAD_ };
-    commits_.emplace(mergeId, std::move(m));
-
-    // advance HEAD on this branch
-    branches_[HEAD_] = mergeId;
-    HEAD_commitId_  = mergeId;
+void Repository::abortMerge() {
+    if (!pendingMerge_) {
+        throw std::runtime_error("No merge in progress");
+    }
+    pendingMerge_.reset();
+    const auto chain = firstParentChain(HEAD_commitId_);
+    workingGraph_.clearGraph();
+    replayCommits(workingGraph_, chain.begin(), chain.end());
     lastCommittedEventIndex_ = workingGraph_.getEventLog().size();
-
-    return MergeResult{ mergeId, std::move(conflicts) };
 }
 
 // ——— Inspecting history ———
@@ -299,6 +312,9 @@ DiffResult Repository::diff(const std::string& fromRef, const std::string& toRef
 // ——— Persistence support ———
 
 RepositoryData Repository::exportData() const {
+    if (pendingMerge_) {
+        throw std::runtime_error("Cannot export a repository while a merge is in progress");
+    }
     RepositoryData data;
     data.branches.insert(branches_.begin(), branches_.end());
     data.head = HEAD_;
@@ -376,6 +392,49 @@ Repository Repository::fromData(RepositoryData data) {
 }
 
 // ——— Helpers ———
+
+std::unordered_set<std::string> Repository::ancestors(const std::string& cid) const {
+    std::unordered_set<std::string> seen{ cid };
+    std::vector<std::string> stack{ cid };
+    while (!stack.empty()) {
+        const std::string cur = std::move(stack.back());
+        stack.pop_back();
+        for (const auto& pid : commits_.at(cur).parents) {
+            if (seen.insert(pid).second) stack.push_back(pid);
+        }
+    }
+    return seen;
+}
+
+std::string Repository::mergeBase(const std::unordered_set<std::string>& ancA,
+                                  const std::unordered_set<std::string>& ancB) const {
+    // Common ancestors that aren't themselves ancestors of another common
+    // ancestor. Every strict ancestor of a common ancestor is common, so these
+    // are what's left after removing everything reachable from their parents.
+    std::vector<std::string> common, stack;
+    for (const auto& c : ancA) {
+        if (!ancB.count(c)) continue;
+        common.push_back(c);
+        const auto& parents = commits_.at(c).parents;
+        stack.insert(stack.end(), parents.begin(), parents.end());
+    }
+    std::unordered_set<std::string> dominated;
+    while (!stack.empty()) {
+        std::string cur = std::move(stack.back());
+        stack.pop_back();
+        if (!dominated.insert(cur).second) continue;
+        const auto& parents = commits_.at(cur).parents;
+        stack.insert(stack.end(), parents.begin(), parents.end());
+    }
+
+    // Criss-cross histories can have several best candidates; pick one
+    // deterministically (the root is common to all, so there's always one)
+    std::vector<std::string> best;
+    for (const auto& c : common) {
+        if (!dominated.count(c)) best.push_back(c);
+    }
+    return *std::min_element(best.begin(), best.end());
+}
 
 std::string Repository::resolve(const std::string& ref) const {
     if (auto it = branches_.find(ref); it != branches_.end()) return it->second;

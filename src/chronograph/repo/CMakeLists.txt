@@ -1,6 +1,7 @@
 # src/chronograph/repo/CMakeLists.txt
 
 set(REPO_SOURCES
+    MergePlanner.cpp
     Repository.cpp
     # any other repo-specific .cpp
 )

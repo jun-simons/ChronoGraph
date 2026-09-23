@@ -41,18 +41,9 @@ struct CommitGraph {
 
 ---
 
-```markdown
 ## 2. Merge & Conflict Types
 
-### `enum class MergePolicy`
-
-```cpp
-enum class MergePolicy { OURS, THEIRS, ATTRIBUTE_UNION, INTERACTIVE };
-- `OURS`: prefer current branch on conflicts
-- `THEIRS`: prefer incoming branch
-- `ATTRIBUTE_UNION`: merge attribute maps
-- `INTERACTIVE`: collect conflicts for manual resolution
-```
+`MergePolicy`, `Resolution`, `Conflict`, `EntityVersion` and `MergeResult` are covered in [Merging & Conflicts](merge.md).
 
 ## 3. The `Repository` Class
 
@@ -188,17 +179,13 @@ MergeResult merge(const std::string& branchName,
                   MergePolicy policy = MergePolicy::OURS);
 ```
 
-- **Description:** Merge `branchName` into the current branch (`HEAD`).  
+- **Description:** Merge `branchName` into the current branch (`HEAD`): a no-op, a fast-forward, or a three-way merge against the lowest common ancestor with per-attribute conflict detection.  
 - **Parameters:**  
   - `branchName` – branch to merge from  
-  - `policy`     – conflict resolution strategy  
-- **Returns:** `MergeResult` containing new merge commit ID and any conflicts.  
-- **Effects:**  
-  - No-op if `branchName` is already contained in `HEAD`.  
-  - Fast-forward if possible, else create a two-parent commit.  
-  - Rebuild working graph to merged state.  
-- **Throws:** `runtime_error` if branch not found or there are uncommitted changes.  
-- **Note:** conflict detection and the non-`THEIRS` policies are not implemented yet; branch changes are currently always applied.  
+  - `policy`     – how conflicts are settled (`OURS`, `THEIRS`, `ATTRIBUTE_UNION`, `INTERACTIVE`)  
+- **Returns:** `MergeResult` with the merge commit ID (empty while an interactive merge is pending) and every conflict found.  
+- **Throws:** `runtime_error` if the branch is not found, there are uncommitted changes, or a merge is already in progress.  
+- **See:** [Merging & Conflicts](merge.md) for the rules, policies and the interactive API (`isMerging`, `mergeConflicts`, `resolveConflict`, `abortMerge`).  
 
 
 ### `graph()`

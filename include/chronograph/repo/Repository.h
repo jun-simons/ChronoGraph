@@ -2,8 +2,10 @@
 
 #include <chronograph/graph/Graph.h>
 #include <chronograph/graph/Diff.h>
-#include <chronograph/graph/Event.h> 
+#include <chronograph/graph/Event.h>
+#include <chronograph/repo/Merge.h>
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -32,17 +34,6 @@ struct CommitGraph {
   // For each commit ID, its list of child commit IDs
   std::unordered_map<std::string, std::vector<std::string>> children;
 };
-
-// -- Merging and Conflict Types ---
-enum class MergePolicy { OURS, THEIRS, ATTRIBUTE_UNION, INTERACTIVE };
-struct Conflict {
-  enum Kind { ADD_ADD, DEL_UPDATE, UPDATE_UPDATE } kind;
-  Event ours, theirs;
-};
-struct MergeResult {
-    std::string         mergeCommitId;
-    std::vector<Conflict> conflicts;  // empty if no conflicts or non-interactive
-  };
 
 /// Everything needed to reconstruct a Repository (see exportData / fromData).
 // * Plain data with no behaviour: persistence formats read and write this
@@ -78,7 +69,10 @@ public:
                     const std::map<std::string, std::string>& attrs,
                     std::int64_t timestamp);
 
-    /// Commit all staged events since the last commit. Returns the new commit ID.
+    /// Commit all staged events since the last commit. Returns the new commit ID
+    /// (or HEAD's, if there is nothing to commit). During an interactive merge,
+    /// creates the merge commit instead; throws std::runtime_error while
+    /// conflicts are unresolved.
     std::string commit(const std::string& message = "");
 
     /// Create a new branch at the current HEAD commit
@@ -102,14 +96,36 @@ public:
     CommitGraph getCommitGraph() const;
 
     /**
-     * Merge `branchName` into the current HEAD branch.
-     * - policy: automatic resolution strategy
-     * - in INTERACTIVE mode, conflicts are returned for manual resolution
-     * Throws std::runtime_error if the branch doesn't exist or there are
-     * uncommitted changes.
+     * Merge `branchName` into the current branch (see Merge.h for policies).
+     * - Already contained in HEAD: no-op. HEAD is an ancestor: fast-forward.
+     * - Otherwise a three-way merge against the lowest common ancestor. With
+     *   OURS / THEIRS / ATTRIBUTE_UNION the merge commit is created at once and
+     *   the settled conflicts are reported. With INTERACTIVE and conflicts, the
+     *   merge stops (empty mergeCommitId): the working graph holds the merged
+     *   state with conflicts settled as OURS, until each is resolved with
+     *   resolveConflict() and the merge is finished with commit().
+     * Throws std::runtime_error if the branch doesn't exist, there are
+     * uncommitted changes, or a merge is already in progress.
      */
     MergeResult merge(const std::string& branchName,
                     MergePolicy policy = MergePolicy::OURS);
+
+    // ——— Interactive merges ———
+
+    /// True while an INTERACTIVE merge waits to be committed or aborted
+    bool isMerging() const { return pendingMerge_.has_value(); }
+
+    /// Conflicts still waiting for resolveConflict() (empty when not merging)
+    const std::vector<Conflict>& mergeConflicts() const;
+
+    /// Settle a pending conflict (matched by its entity and ID) in the working
+    /// graph. Throws std::runtime_error if no merge is in progress,
+    /// std::invalid_argument if the conflict isn't pending or its chosen
+    /// version is an edge whose endpoint no longer exists.
+    void resolveConflict(const Conflict& conflict, Resolution resolution);
+
+    /// Abandon the merge in progress, restoring the working graph to HEAD
+    void abortMerge();
 
     /// Access the current working‐tree graph
     const Graph& graph() const { return workingGraph_; }
@@ -135,7 +151,8 @@ public:
 
     // ——— Persistence support ———
 
-    /// Copy out the full repository: commits, branches, HEAD and staged events
+    /// Copy out the full repository: commits, branches, HEAD and staged events.
+    /// Throws std::runtime_error during an interactive merge.
     RepositoryData exportData() const;
 
     /// Rebuild a repository from exported data. Throws std::invalid_argument if
@@ -157,6 +174,25 @@ private:
 
     // how many events have been committed into parents already
     size_t lastCommittedEventIndex_ = 0;
+
+    // An interactive merge waiting for its conflicts to be resolved
+    struct PendingMerge {
+        std::string theirsCommit;
+        std::string message;             // default merge commit message
+        std::vector<Conflict> unresolved;
+        std::int64_t timestamp;          // stamp for resolution events
+    };
+    std::optional<PendingMerge> pendingMerge_;
+
+    // Record the staged events as a commit with `parents`; advances HEAD
+    std::string createCommit(std::vector<std::string> parents, const std::string& message);
+
+    // All ancestors of `cid`, including itself
+    std::unordered_set<std::string> ancestors(const std::string& cid) const;
+
+    // Best common ancestor of two commits, given their ancestor sets
+    std::string mergeBase(const std::unordered_set<std::string>& ancA,
+                          const std::unordered_set<std::string>& ancB) const;
 
     // Commits from the root to `cid`, following first parents. Each commit's
     // events are its delta against its first parent, so replaying this chain

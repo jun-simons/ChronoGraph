@@ -151,10 +151,20 @@ nodes = repo.graph().get_nodes()
 Merging:
 
 ```python
-from chronograph import MergePolicy
-res = repo.merge("other_branch", policy=chronograph.MergePolicy.OURS)
-conflicts = res.conflicts
+from chronograph import MergePolicy, Resolution
+res = repo.merge("other_branch", policy=MergePolicy.OURS)
+for c in res.conflicts:          # settled by the policy; for review
+    print(c.kind, c.entity, c.id, c.keys, c.ours, c.theirs)
+
+# interactive
+res = repo.merge("feature", MergePolicy.INTERACTIVE)
+if repo.is_merging():
+    for c in repo.merge_conflicts():
+        repo.resolve_conflict(c, Resolution.THEIRS)
+    repo.commit()                # or repo.abort_merge()
 ```
+
+See [Merging & Conflicts](../api/merge.md) for the rules.
 
 ## 7. Quick Example
 

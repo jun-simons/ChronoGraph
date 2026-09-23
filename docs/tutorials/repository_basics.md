@@ -104,17 +104,25 @@ You can pretty-print this with printCommitGraph(...) (in printUtils.h), or expor
 ChronoGraph supports a `merge()` API (with pluggable policies) to combine two lines of work:
 
 ```cpp
-auto result = repo.merge("dev", MergePolicy::OURS);
-if (!result.conflicts.empty()) {
-  // resolve conflicts in INTERACTIVE mode
+auto result = repo.merge("dev", MergePolicy::OURS);   // conflicts settled: ours wins
+for (const auto& c : result.conflicts) {
+  // review what was settled: c.kind, c.id, c.keys, c.ours / c.theirs
 }
+
+// Or stop and decide each conflict yourself
+auto pending = repo.merge("feature", MergePolicy::INTERACTIVE);
+for (const auto& c : repo.mergeConflicts()) {
+  repo.resolveConflict(c, Resolution::THEIRS);
+}
+repo.commit();
 ```
 
 - Fast-forwards when possible
-- Creates a two-parent commit on true three-way merges
-- Returns any conflicts for manual resolution
+- Otherwise compares both sides against their lowest common ancestor: changes on different nodes, edges, or even different attributes of the same node combine automatically
+- Conflicts arise only where both sides changed the same thing differently, or one deleted what the other changed
+- Creates a two-parent merge commit
 
-*Note: merging is still under development: currently, only simple priority-based conflict resolution is supported, but alternative merge options are in the works*
+See [Merging & Conflicts](../api/merge.md) for the full rules.
 
 ---
 

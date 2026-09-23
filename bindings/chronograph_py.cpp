@@ -176,16 +176,40 @@ void bindRepository(py::module_& m) {
         .value("INTERACTIVE", MergePolicy::INTERACTIVE)
         .export_values();
 
+    py::enum_<Resolution>(m, "Resolution")
+        .value("OURS",   Resolution::OURS)
+        .value("THEIRS", Resolution::THEIRS)
+        .value("MANUAL", Resolution::MANUAL);
+
+    py::class_<EntityVersion>(m, "EntityVersion")
+        .def_readonly("attributes",        &EntityVersion::attributes)
+        .def_readonly("from_",             &EntityVersion::from)
+        .def_readonly("to",                &EntityVersion::to)
+        .def_readonly("created_timestamp", &EntityVersion::createdTimestamp)
+        ;
+
     py::class_<Conflict> conflict(m, "Conflict");
     py::enum_<Conflict::Kind>(conflict, "Kind")
         .value("ADD_ADD",       Conflict::ADD_ADD)
         .value("DEL_UPDATE",    Conflict::DEL_UPDATE)
         .value("UPDATE_UPDATE", Conflict::UPDATE_UPDATE);
+    py::enum_<Conflict::EntityKind>(conflict, "EntityKind")
+        .value("NODE", Conflict::NODE)
+        .value("EDGE", Conflict::EDGE);
     conflict
-        .def_readonly("kind",    &Conflict::kind)
-        .def_readonly("ours",    &Conflict::ours)
-        .def_readonly("theirs",  &Conflict::theirs)
-        ;
+        .def_readonly("kind",            &Conflict::kind)
+        .def_readonly("entity",          &Conflict::entity)
+        .def_readonly("id",              &Conflict::id)
+        .def_readonly("base",            &Conflict::base)
+        .def_readonly("ours",            &Conflict::ours)
+        .def_readonly("theirs",          &Conflict::theirs)
+        .def_readonly("keys",            &Conflict::keys)
+        .def_readonly("endpoints",       &Conflict::endpoints)
+        .def_readonly("dependent_edges", &Conflict::dependentEdges)
+        .def("__repr__", [](const Conflict& c) {
+            return "<Conflict " + py::str(py::cast(c.kind)).cast<std::string>() + " on " +
+                   (c.entity == Conflict::NODE ? "node '" : "edge '") + c.id + "'>";
+        });
 
     py::class_<MergeResult>(m, "MergeResult")
         .def_readonly("merge_commit_id", &MergeResult::mergeCommitId)
@@ -229,6 +253,11 @@ void bindRepository(py::module_& m) {
         .def("get_commit_graph", &Repository::getCommitGraph)
         .def("merge", &Repository::merge,
              py::arg("branch"), py::arg("policy") = MergePolicy::OURS)
+        .def("is_merging", &Repository::isMerging)
+        .def("merge_conflicts", &Repository::mergeConflicts)
+        .def("resolve_conflict", &Repository::resolveConflict,
+             py::arg("conflict"), py::arg("resolution"))
+        .def("abort_merge", &Repository::abortMerge)
         .def("graph", &Repository::graph, py::return_value_policy::reference_internal)
         .def("current_branch", &Repository::currentBranch)
         .def("head_commit", &Repository::headCommit)
