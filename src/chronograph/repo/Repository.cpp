@@ -275,7 +275,113 @@ MergeResult Repository::merge(const std::string& branchName,
     return MergeResult{ mergeId, std::move(conflicts) };
 }
 
+// ——— Inspecting history ———
+
+const Commit& Repository::getCommit(const std::string& commitId) const {
+    auto it = commits_.find(commitId);
+    if (it == commits_.end()) {
+        throw std::runtime_error("Commit '" + commitId + "' does not exist");
+    }
+    return it->second;
+}
+
+Graph Repository::graphAt(const std::string& ref) const {
+    const auto chain = firstParentChain(resolve(ref));
+    Graph g;
+    replayCommits(g, chain.begin(), chain.end());
+    return g;
+}
+
+DiffResult Repository::diff(const std::string& fromRef, const std::string& toRef) const {
+    return chronograph::diff(graphAt(fromRef), graphAt(toRef));
+}
+
+// ——— Persistence support ———
+
+RepositoryData Repository::exportData() const {
+    RepositoryData data;
+    data.branches.insert(branches_.begin(), branches_.end());
+    data.head = HEAD_;
+
+    const auto& log = workingGraph_.getEventLog();
+    data.staged.assign(log.begin() + lastCommittedEventIndex_, log.end());
+
+    // Topological order (parents first), deterministic for a given history:
+    // iterative post-order DFS from each branch tip in name order, then any
+    // commits no branch reaches, in ID order.
+    std::vector<std::string> roots;
+    for (const auto& [name, cid] : data.branches) roots.push_back(cid);
+    std::vector<std::string> rest;
+    for (const auto& [cid, _] : commits_) rest.push_back(cid);
+    std::sort(rest.begin(), rest.end());
+    roots.insert(roots.end(), rest.begin(), rest.end());
+
+    std::unordered_set<std::string> visited;
+    for (const auto& root : roots) {
+        // stack of (commit, index of next parent to visit)
+        std::vector<std::pair<std::string, size_t>> stack;
+        if (visited.insert(root).second) stack.emplace_back(root, 0);
+        while (!stack.empty()) {
+            auto& [cid, next] = stack.back();
+            const auto& parents = commits_.at(cid).parents;
+            if (next < parents.size()) {
+                const std::string& pid = parents[next++];
+                if (visited.insert(pid).second) stack.emplace_back(pid, 0);
+            } else {
+                data.commits.push_back(commits_.at(cid));
+                stack.pop_back();
+            }
+        }
+    }
+    return data;
+}
+
+Repository Repository::fromData(RepositoryData data) {
+    auto invalid = [](const std::string& msg) {
+        return std::invalid_argument("Invalid repository data: " + msg);
+    };
+
+    Repository repo;
+    std::string rootId;
+    for (auto& c : data.commits) {
+        if (repo.commits_.count(c.id)) throw invalid("duplicate commit '" + c.id + "'");
+        if (c.parents.empty()) {
+            if (!rootId.empty()) throw invalid("more than one root commit");
+            rootId = c.id;
+        }
+        for (const auto& pid : c.parents) {
+            if (!repo.commits_.count(pid)) {
+                throw invalid("commit '" + c.id + "' has unknown or later parent '" + pid + "'");
+            }
+        }
+        std::string id = c.id;
+        repo.commits_.emplace(std::move(id), std::move(c));
+    }
+    if (rootId.empty()) throw invalid("no root commit");
+
+    for (const auto& [name, cid] : data.branches) {
+        if (!repo.commits_.count(cid)) {
+            throw invalid("branch '" + name + "' points at unknown commit '" + cid + "'");
+        }
+        repo.branches_[name] = cid;
+    }
+    auto head = repo.branches_.find(data.head);
+    if (head == repo.branches_.end()) throw invalid("unknown head branch '" + data.head + "'");
+
+    // Rebuild the working graph: committed history, then staged events
+    repo.HEAD_ = data.head;
+    repo.moveHeadTo(head->second);  // HEAD_commitId_ is empty: full rebuild
+    for (const auto& e : data.staged) repo.workingGraph_.addEvent(e);
+    return repo;
+}
+
 // ——— Helpers ———
+
+std::string Repository::resolve(const std::string& ref) const {
+    if (auto it = branches_.find(ref); it != branches_.end()) return it->second;
+    if (commits_.count(ref)) return ref;
+    throw std::runtime_error("Unknown branch or commit '" + ref + "'");
+}
 
 std::vector<std::string> Repository::firstParentChain(const std::string& cid) const {
     std::vector<std::string> chain;
@@ -299,11 +405,7 @@ void Repository::moveHeadTo(const std::string& target) {
         workingGraph_.clearGraph();
         cur = chain.begin();
     }
-    for (; cur != chain.end(); ++cur) {
-        for (const auto& e : commits_.at(*cur).events) {
-            workingGraph_.addEvent(e);
-        }
-    }
+    replayCommits(workingGraph_, cur, chain.end());
 
     HEAD_commitId_ = target;
     lastCommittedEventIndex_ = workingGraph_.getEventLog().size();

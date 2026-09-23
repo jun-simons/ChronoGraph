@@ -367,3 +367,36 @@ TEST(RepositoryCheckout, GuardsUncommittedChanges) {
     repo.checkout("main");
     EXPECT_EQ(repo.graph().getNodes().size(), 1u);
 }
+
+TEST(RepositoryHistory, GraphAtAndDiffBetweenRefs) {
+    auto repo = Repository::init("main");
+    repo.addNode("a", {{"v","1"}}, 1);
+    auto c1 = repo.commit("add a");
+    repo.branch("dev");
+    repo.checkout("dev");
+    repo.updateNode("a", {{"v","2"}}, 2);
+    repo.addNode("b", {}, 3);
+    repo.commit("dev work");
+
+    EXPECT_EQ(repo.currentBranch(), "dev");
+    EXPECT_EQ(repo.getCommit(repo.headCommit()).message, "dev work");
+
+    // Refs resolve to branches or commit IDs; HEAD is unaffected
+    EXPECT_EQ(repo.graphAt("main").getNodes().size(), 1u);
+    EXPECT_EQ(repo.graphAt(c1).getNodes().at("a").attributes.at("v"), "1");
+    EXPECT_EQ(repo.graphAt("dev").getNodes().size(), 2u);
+    EXPECT_EQ(repo.currentBranch(), "dev");
+
+    // The rebuilt graph carries its history, so time travel works on it
+    EXPECT_EQ(Snapshot(repo.graphAt("dev"), 2).getNodes().at("a").attributes.at("v"), "2");
+
+    auto d = repo.diff("main", "dev");
+    ASSERT_EQ(d.nodesAdded.size(), 1u);
+    EXPECT_EQ(d.nodesAdded[0].id, "b");
+    ASSERT_EQ(d.nodesUpdated.size(), 1u);
+    EXPECT_EQ(d.nodesUpdated[0].second.attributes.at("v"), "2");
+    EXPECT_TRUE(repo.diff("dev", repo.headCommit()).empty());
+
+    EXPECT_THROW(repo.graphAt("nope"), std::runtime_error);
+    EXPECT_THROW(repo.getCommit("nope"), std::runtime_error);
+}

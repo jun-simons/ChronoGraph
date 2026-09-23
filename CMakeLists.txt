@@ -13,6 +13,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_subdirectory(src/chronograph/graph)
 add_subdirectory(src/chronograph/repo)
 add_subdirectory(src/chronograph/repo/utils)
+add_subdirectory(src/chronograph/io)
 
 add_library(chronograph INTERFACE)
 target_link_libraries(chronograph
@@ -22,6 +23,7 @@ target_link_libraries(chronograph
     chronograph-graph-utils
     chronograph-repo
     chronograph-repo-utils
+    chronograph-io
 )
 
 # Specify include directories for consumers

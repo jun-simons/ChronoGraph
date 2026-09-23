@@ -15,16 +15,22 @@ Chronograph can be used for social-network evolution, financial audit trails, co
   Full history of node/edge additions, deletions, and updates with timestamps
 
 - **Snapshots & Time-Travel**  
-  View the graph at a certain point in time, or *replay* the graph changes between two points in time
+  View the graph at a certain point in time and run any algorithm on it, or *replay* the graph changes between two points in time
+
+- **Temporal Queries**  
+  Per-node and per-edge history, point-in-time lookups, and time-window queries over the event log
 
 - **Diffing**  
-  Compute added/removed/updated nodes and edges between two points in time, or between two branches
+  Compute added/removed/updated nodes and edges between two points in time, two snapshots, or two branches/commits
 
 - **Repository & Commits**  
   ChronoGraph provides a `Respository` object at the top level. Changes to the graph are committed and stored as `Commit` objects
 
 - **Branching & Merging**  
   Graph repositories support branching, and fast-forward and three-way merges
+
+- **Saving & Loading**  
+  Save graphs and whole repositories (including uncommitted work) to versioned, diff-friendly JSON
 
 - **Graph Algorithms**  
   Reachability, shortest paths, connected components, topological sorting, cycle detection, and more are offered in a dedicated `graph/algorithms/` submodule

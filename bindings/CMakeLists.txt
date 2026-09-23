@@ -13,6 +13,7 @@ target_link_libraries(chronograph_module
     chronograph-graph-algo
     chronograph-graph-utils
     chronograph-repo
+    chronograph-io
 )
 
 target_include_directories(chronograph_module

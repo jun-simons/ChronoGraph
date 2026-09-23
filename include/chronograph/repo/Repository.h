@@ -1,7 +1,9 @@
 #pragma once
 
 #include <chronograph/graph/Graph.h>
+#include <chronograph/graph/Diff.h>
 #include <chronograph/graph/Event.h> 
+#include <map>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -42,6 +44,15 @@ struct MergeResult {
     std::vector<Conflict> conflicts;  // empty if no conflicts or non-interactive
   };
 
+/// Everything needed to reconstruct a Repository (see exportData / fromData).
+// * Plain data with no behaviour: persistence formats read and write this
+//   rather than reaching into Repository's internals.
+struct RepositoryData {
+    std::vector<Commit> commits;                  // parents listed before children
+    std::map<std::string, std::string> branches;  // branch name -> commit ID
+    std::string head;                             // checked-out branch
+    std::vector<Event> staged;                    // uncommitted events on top of head
+};
 
 // Git-style repository for a graph
 class Repository {
@@ -103,6 +114,35 @@ public:
     /// Access the current working‐tree graph
     const Graph& graph() const { return workingGraph_; }
 
+    // ——— Inspecting history ———
+    // A `ref` is a branch name or a commit ID (branch names take precedence).
+    // All of these throw std::runtime_error for unknown refs.
+
+    /// Name of the checked-out branch
+    const std::string& currentBranch() const { return HEAD_; }
+    /// ID of the commit HEAD points at
+    const std::string& headCommit() const { return HEAD_commitId_; }
+
+    /// Look up a single commit by ID
+    const Commit& getCommit(const std::string& commitId) const;
+
+    /// The committed graph as of `ref`, rebuilt from history. Its event log is
+    /// that commit's full history, so Snapshots and temporal queries work on it.
+    Graph graphAt(const std::string& ref) const;
+
+    /// Changes between the committed graphs at two refs
+    DiffResult diff(const std::string& fromRef, const std::string& toRef) const;
+
+    // ——— Persistence support ———
+
+    /// Copy out the full repository: commits, branches, HEAD and staged events
+    RepositoryData exportData() const;
+
+    /// Rebuild a repository from exported data. Throws std::invalid_argument if
+    /// the data is inconsistent (unknown parents or branch targets, commits out
+    /// of order, not exactly one root commit, or an unknown head branch).
+    static Repository fromData(RepositoryData data);
+
 private:
     Graph workingGraph_;
 
@@ -116,12 +156,23 @@ private:
     std::string HEAD_commitId_;  
 
     // how many events have been committed into parents already
-    size_t lastCommittedEventIndex_;
+    size_t lastCommittedEventIndex_ = 0;
 
     // Commits from the root to `cid`, following first parents. Each commit's
     // events are its delta against its first parent, so replaying this chain
     // reproduces the graph at `cid`.
     std::vector<std::string> firstParentChain(const std::string& cid) const;
+
+    // Commit ID for a branch name or commit ID; throws if neither
+    std::string resolve(const std::string& ref) const;
+
+    // Append the events of commits [first, last) to `g`
+    template <typename It>
+    void replayCommits(Graph& g, It first, It last) const {
+        for (; first != last; ++first) {
+            for (const auto& e : commits_.at(*first).events) g.addEvent(e);
+        }
+    }
 
     // Point HEAD_commitId_ at `target` and bring the working graph in line with
     // it (replaying only the missing commits when possible)
