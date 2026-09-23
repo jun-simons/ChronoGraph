@@ -138,7 +138,15 @@ void checkout(const std::string& branchName);
 - **Description:** Switch `HEAD` to the tip of `branchName`. Rebuilds the working graph by replaying or fast-forwarding commits.  
 - **Parameters:**  
   - `branchName` – must already exist  
-- **Throws:** `runtime_error` if branch not found.  
+- **Throws:** `runtime_error` if branch not found, or if there are uncommitted changes and the branch points at a different commit (switching to a branch at the same commit carries uncommitted work along, like `git checkout`).  
+
+### `hasUncommittedChanges()`
+
+```cpp
+bool hasUncommittedChanges() const;
+```
+
+- **Description:** `true` if the working graph has events that haven't been committed yet.  
 
 ### `listBranches()`
 ```cpp
@@ -184,8 +192,11 @@ MergeResult merge(const std::string& branchName,
   - `policy`     – conflict resolution strategy  
 - **Returns:** `MergeResult` containing new merge commit ID and any conflicts.  
 - **Effects:**  
+  - No-op if `branchName` is already contained in `HEAD`.  
   - Fast-forward if possible, else create a two-parent commit.  
   - Rebuild working graph to merged state.  
+- **Throws:** `runtime_error` if branch not found or there are uncommitted changes.  
+- **Note:** conflict detection and the non-`THEIRS` policies are not implemented yet; branch changes are currently always applied.  
 
 
 ### `graph()`

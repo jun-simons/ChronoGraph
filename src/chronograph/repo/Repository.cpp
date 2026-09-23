@@ -23,7 +23,7 @@ Repository Repository::init(const std::string& rootBranch) {
     Repository repo;
     // Create an initial “root” commit
     const std::string rootId = generateCommitId();
-    Commit root{ rootId, {}, {} };
+    Commit root{ rootId, {}, {}, "" };
     repo.commits_.emplace(rootId, root);
 
     // Set up branches and HEAD
@@ -112,69 +112,28 @@ void Repository::branch(const std::string& branchName) {
     branches_[branchName] = HEAD_commitId_;
 }
 
+bool Repository::hasUncommittedChanges() const {
+    return workingGraph_.getEventLog().size() > lastCommittedEventIndex_;
+}
+
 void Repository::checkout(const std::string& branchName) {
     auto it = branches_.find(branchName);
-     if (it == branches_.end()) {
-         throw std::runtime_error("Branch '" + branchName + "' does not exist");
-     }
-    const std::string newCommit = it->second;
-    const std::string oldCommit = HEAD_commitId_;
-    // 1) Switch HEAD to the target branch
-    HEAD_ = branchName;
-    HEAD_commitId_ = newCommit;
+    if (it == branches_.end()) {
+        throw std::runtime_error("Branch '" + branchName + "' does not exist");
+    }
+    const std::string& target = it->second;
 
-    // 2) If nothing changed, no need to update graph
-    if (newCommit == oldCommit) {
-        // make sure lastCommittedEventIndex_ stays correct
-        lastCommittedEventIndex_ = workingGraph_.getEventLog().size();
+    // Same commit: just switch branch, carrying any uncommitted work along
+    if (target == HEAD_commitId_) {
+        HEAD_ = branchName;
         return;
     }
-
-    // 3) Otherwise, rebuild or fast‐forward…
-    // Collect oldChain from old HEAD, newChain from newCommit
-    std::vector<std::string> oldChain, newChain;
-    std::unordered_set<std::string> seen;
-    buildAncestors(oldCommit, oldChain, seen);
-    seen.clear();
-    buildAncestors(newCommit, newChain, seen);
-
-    bool isDescendant = false;
-    if (oldChain.size() <= newChain.size()) {
-      isDescendant = std::equal(
-        oldChain.begin(), oldChain.end(),
-        newChain.begin()
-      );
+    if (hasUncommittedChanges()) {
+        throw std::runtime_error(
+            "Cannot checkout '" + branchName + "': uncommitted changes");
     }
-
-    // if old chain is a descendant of the new chain
-    // * we fast forward new commits to match the branch
-    // else if the old chain is a descendant of the new chain
-    // * rebuild the chain based on prior commits
-    if (isDescendant) { 
-        // fast‐forward only the missing commits
-        auto it2 = std::find(newChain.begin(), newChain.end(), oldCommit);
-        ++it2;
-        for (; it2 != newChain.end(); ++it2) {
-            const Commit& cm = commits_.at(*it2);
-            for (auto& e : cm.events) {
-                workingGraph_.addEvent(e);
-                workingGraph_.applyEvent(e);
-            }
-        }
-    } else {
-        // full rebuild
-        workingGraph_.clearGraph();
-        for (auto& cid : newChain) {
-            const Commit& cm = commits_.at(cid);
-            for (auto& e : cm.events) {
-                workingGraph_.addEvent(e);
-                workingGraph_.applyEvent(e);
-            }
-        }
-    }
-
-    // update how many events we have in the log now
-    lastCommittedEventIndex_ = workingGraph_.getEventLog().size();
+    HEAD_ = branchName;
+    moveHeadTo(target);
 }
 
 // ——— List branches & commits ———
@@ -250,61 +209,46 @@ MergeResult Repository::merge(const std::string& branchName,
         return MergeResult{ A, {} };
     }
 
-    // 3) Build ancestor chains and sets
-    std::vector<std::string> ancA, ancB;
-    std::unordered_set<std::string> setA, setB;
+    if (hasUncommittedChanges()) {
+        throw std::runtime_error(
+            "Cannot merge '" + branchName + "': uncommitted changes");
+    }
+
+    // 3) Ancestors of our tip
+    std::vector<std::string> ancA;
+    std::unordered_set<std::string> setA;
     buildAncestors(A, ancA, setA);
+
+    // 4) B already contained in A: nothing to do
+    if (setA.count(B)) {
+        return MergeResult{ A, {} };
+    }
+
+    // 5) A is an ancestor of B: fast forward
+    std::vector<std::string> ancB;
+    std::unordered_set<std::string> setB;
     buildAncestors(B, ancB, setB);
-
-    // 4) IF A is ancestor of B: simply fast forward
     if (setB.count(A)) {
-        // compute linear path B->A (exclusive of A), using first‐parent pointers
-        std::vector<std::string> pathB;
-        for (std::string cid = B; cid != A; cid = commits_[cid].parents[0]) {
-            pathB.push_back(cid);
-        }
-        std::reverse(pathB.begin(), pathB.end());
-
-        // apply each commit’s events in order
-        for (auto& cid : pathB) {
-            for (auto& e : commits_.at(cid).events) {
-                workingGraph_.addEvent(e);
-                workingGraph_.applyEvent(e);
-            }
-        }
-
-        // advance main branch pointer
+        moveHeadTo(B);
         branches_[HEAD_] = B;
-        HEAD_commitId_ = B;
-        lastCommittedEventIndex_ = workingGraph_.getEventLog().size();
         return MergeResult{ B, {} };
     }
 
-    // 5) IF True three‐way merge
-    // 5a) Find the common ancestor (CA), walk back from B until we hit something in ancA
-    std::string CA;
-    for (auto it = ancB.rbegin(); it != ancB.rend(); ++it) {
-        if (setA.count(*it)) {
-            CA = *it;
-            break;
-        }
-    }
-    if (CA.empty()) {
+    // 6) Three-way merge
+    // 6a) Base = most recent commit on B's first-parent chain that A also has.
+    //     The root is shared by every chain, so this always exists.
+    const auto chainB = firstParentChain(B);
+    auto baseIt = std::find_if(chainB.rbegin(), chainB.rend(),
+        [&](const std::string& cid) { return setA.count(cid) > 0; });
+    if (baseIt == chainB.rend()) {
         throw std::runtime_error("No common ancestor found!");
     }
 
-    // 5b) Compute B’s delta since CA: linear path from CA→B
-    std::vector<std::string> pathB;
-    for (std::string cid = B; cid != CA; cid = commits_[cid].parents[0]) {
-        pathB.push_back(cid);
-    }
-    std::reverse(pathB.begin(), pathB.end());
-
-    // 5c) Apply B’s delta onto the current working‐tree (which is at A)
-    std::vector<Conflict> conflicts;    
+    // 6b) Replay B's commits after the base onto the working tree (which is at A)
+    std::vector<Conflict> conflicts;
     std::vector<Event>   mergedEvents;
-    for (auto& cid : pathB) {
-        for (auto& e : commits_.at(cid).events) {
+    for (auto it = chainB.begin() + (chainB.rend() - baseIt); it != chainB.end(); ++it) {
+        for (auto& e : commits_.at(*it).events) {
             //TODO: detailed conflict population
             bool conflict = false;
             if (conflict && policy == MergePolicy::OURS) {
@@ -312,15 +256,15 @@ MergeResult Repository::merge(const std::string& branchName,
             } else {
             // either no conflict, or THEIRS/UNION
                 workingGraph_.addEvent(e);
-                workingGraph_.applyEvent(e);
                 mergedEvents.push_back(e);
             }
         }
     }
 
-    // 5d) Create the merge commit with two parents (A and B)
+    // 6c) Create the merge commit with two parents (A and B)
     std::string mergeId = generateCommitId();
-    Commit m{ mergeId, { A, B }, std::move(mergedEvents) };
+    Commit m{ mergeId, { A, B }, std::move(mergedEvents),
+              "Merge branch '" + branchName + "' into " + HEAD_ };
     commits_.emplace(mergeId, std::move(m));
 
     // advance HEAD on this branch
@@ -332,6 +276,38 @@ MergeResult Repository::merge(const std::string& branchName,
 }
 
 // ——— Helpers ———
+
+std::vector<std::string> Repository::firstParentChain(const std::string& cid) const {
+    std::vector<std::string> chain;
+    for (const Commit* c = &commits_.at(cid); ; c = &commits_.at(c->parents.front())) {
+        chain.push_back(c->id);
+        if (c->parents.empty()) break;
+    }
+    std::reverse(chain.begin(), chain.end());
+    return chain;
+}
+
+void Repository::moveHeadTo(const std::string& target) {
+    const auto chain = firstParentChain(target);
+    auto cur = std::find(chain.begin(), chain.end(), HEAD_commitId_);
+
+    if (cur != chain.end()) {
+        // Target descends from the current commit: replay only what's missing
+        ++cur;
+    } else {
+        // Otherwise rebuild from the root
+        workingGraph_.clearGraph();
+        cur = chain.begin();
+    }
+    for (; cur != chain.end(); ++cur) {
+        for (const auto& e : commits_.at(*cur).events) {
+            workingGraph_.addEvent(e);
+        }
+    }
+
+    HEAD_commitId_ = target;
+    lastCommittedEventIndex_ = workingGraph_.getEventLog().size();
+}
 
 void Repository::buildAncestors(const std::string& cid,
                                 std::vector<std::string>& out,
