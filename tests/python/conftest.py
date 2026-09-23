@@ -1,5 +1,6 @@
 import sys, pathlib
 
-# adjust this if your build dir is elsewhere
-_bindings = pathlib.Path(__file__).parent.parent / "build" / "bindings"
-sys.path.insert(0, str(_bindings))
+# Fallback for running pytest by hand: CTest sets PYTHONPATH to the fresh build,
+# so this is appended (lowest priority) to avoid shadowing it with a stale module.
+_bindings = pathlib.Path(__file__).parent.parent.parent / "build" / "bindings"
+sys.path.append(str(_bindings))

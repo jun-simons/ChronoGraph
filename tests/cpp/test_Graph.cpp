@@ -2,6 +2,7 @@
 
 #include <chronograph/graph/Graph.h>
 #include <gtest/gtest.h>
+#include <stdexcept>
 #include <map>
 #include <string>
 #include <cstdint>
@@ -119,20 +120,21 @@ TEST(GraphDelNode, BasicSmoke) {
     int64_t tsDelNode = 4;
     g.delNode("n1", tsDelNode);
 
-    // Events: ADD_NODE, ADD_NODE, ADD_EDGE, DEL_NODE, DEL_EDGE
+    // Events: ADD_NODE, ADD_NODE, ADD_EDGE, DEL_EDGE, DEL_NODE
+    // (incident edges are deleted before the node, so replay stays consistent)
     ASSERT_EQ(g.getEventLog().size(), 5u);
 
-    // 4th event is DEL_NODE for n1
-    const Event& eNode = g.getEventLog()[3];
-    EXPECT_EQ(eNode.type, EventType::DEL_NODE);
-    EXPECT_EQ(eNode.entityId, "n1");
-    EXPECT_EQ(eNode.timestamp, tsDelNode);
-
-    // 5th event is DEL_EDGE for e1
-    const Event& eEdge = g.getEventLog()[4];
+    // 4th event is DEL_EDGE for e1
+    const Event& eEdge = g.getEventLog()[3];
     EXPECT_EQ(eEdge.type, EventType::DEL_EDGE);
     EXPECT_EQ(eEdge.entityId, "e1");
     EXPECT_EQ(eEdge.timestamp, tsDelNode);
+
+    // 5th event is DEL_NODE for n1
+    const Event& eNode = g.getEventLog()[4];
+    EXPECT_EQ(eNode.type, EventType::DEL_NODE);
+    EXPECT_EQ(eNode.entityId, "n1");
+    EXPECT_EQ(eNode.timestamp, tsDelNode);
 
     // Node store: n1 gone, n2 remains
     EXPECT_EQ(g.getNodes().count("n1"), 0u);
@@ -204,4 +206,41 @@ TEST(GraphUpdateEdge, MergesAttributesAndEmitsEvent) {
     EXPECT_EQ(g.getOutgoing().at("n1")[0], "e1");
     ASSERT_EQ(g.getIncoming().at("n2").size(), 1u);
     EXPECT_EQ(g.getIncoming().at("n2")[0], "e1");
+}
+
+TEST(GraphValidation, RejectsInvalidMutationsWithoutSideEffects) {
+    Graph g;
+    g.addNode("n1", {}, 1);
+    g.addNode("n2", {}, 2);
+    g.addEdge("e1", "n1", "n2", {}, 3);
+    const auto logSize = g.getEventLog().size();
+
+    EXPECT_THROW(g.addNode("n1", {}, 4), std::invalid_argument);           // duplicate node
+    EXPECT_THROW(g.addEdge("e1", "n1", "n2", {}, 4), std::invalid_argument); // duplicate edge
+    EXPECT_THROW(g.addEdge("e2", "n1", "ghost", {}, 4), std::invalid_argument);
+    EXPECT_THROW(g.addEdge("e2", "ghost", "n1", {}, 4), std::invalid_argument);
+    EXPECT_THROW(g.delNode("ghost", 4), std::invalid_argument);
+    EXPECT_THROW(g.delEdge("ghost", 4), std::invalid_argument);
+    EXPECT_THROW(g.updateNode("ghost", {{"k","v"}}, 4), std::invalid_argument);
+    EXPECT_THROW(g.updateEdge("ghost", {{"k","v"}}, 4), std::invalid_argument);
+
+    // Nothing was logged or changed
+    EXPECT_EQ(g.getEventLog().size(), logSize);
+    EXPECT_EQ(g.getNodes().size(), 2u);
+    EXPECT_EQ(g.getEdges().size(), 1u);
+    EXPECT_EQ(g.getOutgoing().at("n1").size(), 1u);
+}
+
+TEST(GraphDelNode, SelfLoopDeletedOnce) {
+    Graph g;
+    g.addNode("n", {}, 1);
+    g.addEdge("loop", "n", "n", {}, 2);
+    g.delNode("n", 3);
+
+    // ADD_NODE, ADD_EDGE, DEL_EDGE, DEL_NODE -- the loop is only deleted once
+    EXPECT_EQ(g.getEventLog().size(), 4u);
+    EXPECT_TRUE(g.getNodes().empty());
+    EXPECT_TRUE(g.getEdges().empty());
+    EXPECT_TRUE(g.getOutgoing().empty());
+    EXPECT_TRUE(g.getIncoming().empty());
 }

@@ -1,21 +1,16 @@
 # tests/python/CMakeLists.txt
 
-# 1) Locate Python3
-find_package(Python3 REQUIRED COMPONENTS Interpreter)
+if(NOT CHRONOGRAPH_BUILD_PYTHON)
+  return()
+endif()
 
-# 2) Compute the path to your built bindings
-#    we assume your build tree is alongside your source tree
-#    and that the module is in build/bindings/chronograph.so
-set(BINDINGS_DIR "${CMAKE_BINARY_DIR}/bindings")
-
-# 3) Register a CTest that runs pytest via python -m pytest
+# Run pytest with the same interpreter the extension was built for, and put
+# the freshly built module first on the import path. pytest's exit code is the
+# test result, so any failure (including import errors) fails CTest.
 add_test(NAME python_tests
-         COMMAND ${Python3_EXECUTABLE}
-                 -c 
-                   "import sys; sys.path.insert(0, '${BINDINGS_DIR}'); \
-                    import pytest; \
-                    pytest.main(['-q','${CMAKE_CURRENT_SOURCE_DIR}'])"
+         COMMAND ${Python_EXECUTABLE} -m pytest -q ${CMAKE_CURRENT_SOURCE_DIR}
 )
-
-# 4) (Optional) increase timeout if your Python tests take longer
-set_tests_properties(python_tests PROPERTIES TIMEOUT 60)
+set_tests_properties(python_tests PROPERTIES
+  ENVIRONMENT "PYTHONPATH=$<TARGET_FILE_DIR:chronograph_module>"
+  TIMEOUT 60
+)

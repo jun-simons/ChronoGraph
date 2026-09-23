@@ -21,6 +21,13 @@ def test_reachability_and_shortest():
     path = alg.shortest_path(g, "A", "E")
     assert path == ["A", "D", "E"]
 
+def test_dijkstra_weighted_path():
+    g = make_sample_graph()
+    for eid, w in {"e_ab": "1", "e_bc": "1", "e_ce": "1", "e_ad": "5", "e_de": "5"}.items():
+        g.update_edge(eid, {"w": w}, 7)
+    # unweighted BFS prefers A-D-E, but A-B-C-E is cheaper
+    assert alg.dijkstra(g, "A", "E", "w") == ["A", "B", "C", "E"]
+
 def test_time_respecting_reachability():
     g = chronograph.Graph()
     # edges created out of order

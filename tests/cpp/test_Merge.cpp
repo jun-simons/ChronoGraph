@@ -154,3 +154,35 @@ TEST(RepositoryMergeCommitParents, OnlyThreeWayGetsTwoParents) {
       EXPECT_TRUE(nodes.count("C"));
     }
 }
+
+TEST(Merge, FastForwardThroughSecondParent) {
+    // feat is an ancestor of other's tip only via a merge commit's second
+    // parent, so the fast-forward can't walk first parents back to it
+    auto repo = Repository::init("main");
+    repo.addNode("A", {}, 1);
+    repo.commit("A");
+    repo.branch("feat");
+    repo.branch("other");
+
+    repo.checkout("feat");
+    repo.addNode("F", {}, 2);
+    repo.commit("F");
+
+    repo.checkout("other");
+    repo.addNode("O", {}, 3);
+    repo.addEdge("e", "A", "O", {}, 3);
+    repo.commit("O");
+    auto m = repo.merge("feat");  // three-way: parents {O, F}
+
+    repo.checkout("feat");
+    auto r = repo.merge("other");
+    EXPECT_EQ(r.mergeCommitId, m.mergeCommitId);
+
+    const auto& nodes = repo.graph().getNodes();
+    EXPECT_EQ(nodes.size(), 3u);
+    EXPECT_TRUE(nodes.count("F") && nodes.count("O"));
+    EXPECT_EQ(repo.graph().getEdges().at("e").createdTimestamp, 3);
+
+    // Merging an ancestor back in is a no-op
+    EXPECT_EQ(repo.merge("main").mergeCommitId, m.mergeCommitId);
+}

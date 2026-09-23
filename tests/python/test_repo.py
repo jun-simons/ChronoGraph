@@ -1,3 +1,4 @@
+import pytest
 import chronograph
 from chronograph import MergePolicy
 
@@ -37,7 +38,7 @@ def test_branch_isolation_and_snapshot():
     snap_main = chronograph.Snapshot(repo.graph(), 2)
     assert "Y" not in snap_main.get_nodes()
 
-def test_merge_simple_fast_forward(tmp_path):
+def test_merge_simple_fast_forward():
     repo = chronograph.Repository.init("main")
     repo.add_node("A", {}, 1); repo.commit("A")
     repo.branch("feature"); repo.checkout("feature")
@@ -48,3 +49,19 @@ def test_merge_simple_fast_forward(tmp_path):
     # fast‐forward: no conflicts, and graph now includes B
     assert res.conflicts == []
     assert "B" in repo.graph().get_nodes()
+
+def test_commit_history_and_checkout_guard():
+    repo = chronograph.Repository.init("main")
+    repo.add_node("A", {}, 1)
+    cid = repo.commit("add A")
+    commits = repo.list_commits("main")
+    assert [c.id for c in commits][-1] == cid
+    assert commits[-1].message == "add A"
+    assert commits[-1].events[0].type == chronograph.EventType.ADD_NODE
+
+    repo.branch("dev"); repo.checkout("dev")
+    repo.add_node("B", {}, 2); repo.commit("add B")
+    repo.update_node("B", {"k": "v"}, 3)
+    assert repo.has_uncommitted_changes()
+    with pytest.raises(RuntimeError):
+        repo.checkout("main")

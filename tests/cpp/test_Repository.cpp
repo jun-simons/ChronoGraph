@@ -3,6 +3,7 @@
 #include <chronograph/repo/Repository.h>
 #include <chronograph/graph/Snapshot.h>
 #include <gtest/gtest.h>
+#include <stdexcept>
 #include <limits>
 #include <map>
 #include <string>
@@ -195,6 +196,8 @@ TEST(RepositoryBranchIsolation, MultiBranchWithSnapshots) {
       EXPECT_EQ(nodes.size(), 3u);
       EXPECT_EQ(edges.size(), 1u);
       EXPECT_TRUE(edges.count("e_ab"));
+      // edge creation time survives the rebuild from commit history
+      EXPECT_EQ(edges.at("e_ab").createdTimestamp, 4);
 
       Snapshot s(repo.graph(), std::numeric_limits<int64_t>::max());
       const auto& sn = s.getNodes();
@@ -336,4 +339,31 @@ TEST(RepositoryCommitGraph, ParentsAndChildren) {
   EXPECT_EQ(dag.children.at(c2), std::vector<std::string>{c4});
   EXPECT_EQ(dag.children.at(c3), std::vector<std::string>{c4});
   EXPECT_TRUE(dag.children.at(c4).empty());
+}
+
+TEST(RepositoryCheckout, GuardsUncommittedChanges) {
+    auto repo = Repository::init("main");
+    repo.addNode("a", {}, 1);
+    repo.commit("add a");
+    repo.branch("dev");
+
+    // dev points at the same commit: switching is allowed and keeps the work
+    repo.addNode("wip", {}, 2);
+    EXPECT_TRUE(repo.hasUncommittedChanges());
+    repo.checkout("dev");
+    EXPECT_TRUE(repo.graph().getNodes().count("wip"));
+    auto c2 = repo.commit("wip on dev");
+    EXPECT_EQ(repo.listCommits("dev").back().id, c2);
+    EXPECT_EQ(repo.listCommits("main").size(), 2u);  // main didn't move
+
+    // Different commit: uncommitted work would be lost, so refuse
+    repo.addNode("wip2", {}, 3);
+    EXPECT_THROW(repo.checkout("main"), std::runtime_error);
+    EXPECT_THROW(repo.merge("main"), std::runtime_error);
+    EXPECT_TRUE(repo.graph().getNodes().count("wip2"));
+
+    repo.commit("wip2");
+    EXPECT_FALSE(repo.hasUncommittedChanges());
+    repo.checkout("main");
+    EXPECT_EQ(repo.graph().getNodes().size(), 1u);
 }

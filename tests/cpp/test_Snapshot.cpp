@@ -59,7 +59,8 @@ TEST(SnapshotDeletes, NodeDeletion) {
     Graph g;
     g.addNode("n1", {}, /*ts=*/1);
     g.addNode("n2", {}, /*ts=*/1);
-    // delete n1 at ts=5
+    g.addEdge("e1", "n1", "n2", {}, /*ts=*/2);
+    // delete n1 at ts=5 (cascades to e1)
     g.delNode("n1", /*ts=*/5);
 
     // Snapshot just before deletion: n1 present
@@ -72,6 +73,12 @@ TEST(SnapshotDeletes, NodeDeletion) {
     const auto& nodesPost = sPost.getNodes();
     EXPECT_EQ(nodesPost.count("n1"), 0u);
     EXPECT_EQ(nodesPost.count("n2"), 1u);
+    EXPECT_TRUE(sPost.getEdges().empty());
+
+    // No adjacency entries resurrected for the deleted node
+    EXPECT_EQ(sPost.getOutgoing().count("n1"), 0u);
+    EXPECT_EQ(sPost.getIncoming().count("n1"), 0u);
+    EXPECT_TRUE(sPost.getIncoming().at("n2").empty());
 }
 
 TEST(SnapshotUpdates, NodeAttributeUpdate) {
@@ -135,4 +142,43 @@ TEST(SnapshotEdgeUpdate, AttributesMergeCorrectly) {
     EXPECT_EQ(eNew.attributes.at("weight"), "15");    // updated
     EXPECT_EQ(eNew.attributes.at("type"),   "orig");  // still there
     EXPECT_EQ(eNew.attributes.at("label"),  "active");// new attr
+}
+
+TEST(SnapshotReplay, OutOfOrderTimestamps) {
+    // Logs need not be sorted by time (e.g. after a merge); a snapshot
+    // includes every event at or before T, not just a sorted prefix
+    Graph g;
+    g.addNode("late", {}, /*ts=*/10);
+    g.addNode("early", {}, /*ts=*/5);
+    g.addEdge("e", "late", "early", {}, /*ts=*/12);
+
+    Snapshot s(g, 7);
+    EXPECT_EQ(s.getNodes().size(), 1u);
+    EXPECT_TRUE(s.getNodes().count("early"));
+
+    Snapshot all(g, 12);
+    EXPECT_EQ(all.getNodes().size(), 2u);
+    EXPECT_EQ(all.getEdges().at("e").createdTimestamp, 12);
+}
+
+TEST(SnapshotCheckpoints, MatchFullReplayAndResetOnClear) {
+    // Enough events to create a checkpoint (every 5000 events)
+    Graph g;
+    for (int i = 0; i < 5000; ++i) {
+        g.addNode("n" + std::to_string(i), {}, /*ts=*/i);
+    }
+    ASSERT_EQ(g.getCheckpoints().size(), 1u);
+    g.updateNode("n0", {{"k","v"}}, /*ts=*/6000);
+
+    // Snapshot before the checkpoint must not use it; after it may
+    EXPECT_EQ(Snapshot(g, 99).getNodes().size(), 100u);
+    Snapshot after(g, 6000);
+    EXPECT_EQ(after.getNodes().size(), 5000u);
+    EXPECT_EQ(after.getNodes().at("n0").attributes.at("k"), "v");
+
+    // Clearing must drop stale checkpoints
+    g.clearGraph();
+    EXPECT_TRUE(g.getCheckpoints().empty());
+    g.addNode("fresh", {}, /*ts=*/1);
+    EXPECT_EQ(Snapshot(g, 100000).getNodes().size(), 1u);
 }

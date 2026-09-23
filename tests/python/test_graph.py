@@ -1,3 +1,4 @@
+import pytest
 import chronograph
 
 def test_graph_basic_nodes_edges():
@@ -26,8 +27,16 @@ def test_update_and_delete_node():
     assert n["new"] == "yes"
     # delete
     g.del_node("N1", 30)
-    # after deletion it still appears in nodes_ map? TODO: check on this
-    assert "N1" not in g.get_nodes() or g.get_nodes()["N1"].id != "N1"
+    assert "N1" not in g.get_nodes()
+
+def test_invalid_mutations_raise():
+    g = chronograph.Graph()
+    g.add_node("A", {}, 1)
+    with pytest.raises(ValueError):
+        g.add_node("A", {}, 2)
+    with pytest.raises(ValueError):
+        g.add_edge("e", "A", "missing", {}, 3)
+    assert len(g.get_event_log()) == 1
 
 def test_update_and_delete_edge():
     g = chronograph.Graph()
